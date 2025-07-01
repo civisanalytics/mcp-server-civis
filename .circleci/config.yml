@@ -1,21 +1,21 @@
 version: 2.1
 
 jobs:
-    test:
-        docker:
-            - image: cimg/python:3.10  # Use appropriate Python version
-        steps:
-            - checkout
-            - setup_remote_docker
-            - run:
-                    name: Build Docker image
-                    command: docker build -t civisanalytics/mcp-server:latest .
-            - run:
-                    name: Run tests with pytest inside Docker
-                    command: docker run --rm civisanalytics/mcp-server:latest pytest
+  test:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: uv install
+      - run:
+          name: Run tests with pytest inside Docker
+          command: uv run pytest
 
 workflows:
-    version: 2
-    test_and_build:
-        jobs:
-            - test
+  version: 2
+  test_and_build:
+    jobs:
+      - test
+
