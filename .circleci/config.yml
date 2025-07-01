@@ -8,7 +8,7 @@ jobs:
       - checkout
       - run:
           name: Install dependencies
-          command: uv install
+          command: uv sync --frozen
       - run:
           name: Run tests with pytest inside Docker
           command: uv run pytest
@@ -18,4 +18,3 @@ workflows:
   test_and_build:
     jobs:
       - test
-
