@@ -1,0 +1,36 @@
+[project]
+name = "mcp-server-civis"
+version = "0.6.2"
+description = "A Model Context Protocol server providing tools for accessing Civis platform"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["civis", "analytics", "mcp", "llm"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "pydantic>=2.0.0",
+    "tzdata>=2024.2",
+    "civis>=2.5.0",
+    "typeshed_client>=2.7.0",
+]
+
+[project.scripts]
+mcp-server-civis= "mcp_server_civis:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "freezegun>=1.5.1",
+    "pyright>=1.1.389",
+    "pytest>=8.3.3",
+    "ruff>=0.8.1",
+]
