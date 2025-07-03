@@ -107,7 +107,7 @@ wheels = [
 
 [[package]]
 name = "civis"
-version = "2.5.0"
+version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -119,9 +119,9 @@ dependencies = [
     { name = "requests" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6f/67/0de444ffdc68cc9f43320c60e6b2e9698363c823cf56bbe55d1289b61a2e/civis-2.5.0.tar.gz", hash = "sha256:892bb30f95a608bc3da8c7aa08ccfab75bef5eb6fe7d3c8ed4155c7e3ccc40c1", size = 542062, upload-time = "2025-02-24T19:22:11.169Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/2f/576c0fc45d1e00f8097b60a02e1c20a656c88b4c5573b569fb6a4f156cd0/civis-2.7.0.tar.gz", hash = "sha256:d7dad0b4c6bd28d8cb0a4e344c76693e38ea73725074991af294a1d033a6d3bf", size = 556164, upload-time = "2025-07-03T15:27:20.214Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/88/b227ba911f05c3b4dffc15f678336a933fe2d77f3f5631957159d63fad69/civis-2.5.0-py3-none-any.whl", hash = "sha256:aec61ff1a5e998b32bcae7e5d484f79333d36af3e60dff30ec01948592f4e7e2", size = 511786, upload-time = "2025-02-24T19:22:35.29Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/84/8e533534085f69d88bb6a673da7c8b589f057d44af219c738ab3575d017c/civis-2.7.0-py3-none-any.whl", hash = "sha256:46e731c1599277b0cd3fde666e6fdbaee7a477d49ebd7b8b5c10a73951bc2d69", size = 524314, upload-time = "2025-07-03T15:27:18.616Z" },
 ]
 
 [[package]]
@@ -234,15 +234,6 @@ wheels = [
 ]
 
 [[package]]
-name = "importlib-resources"
-version = "6.5.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/cf/8c/f834fbf984f691b4f7ff60f50b514cc3de5cc08abfc3295564dd89c5e2e7/importlib_resources-6.5.2.tar.gz", hash = "sha256:185f87adef5bcc288449d98fb4fba07cea78bc036455dd44c5fc4a2fe78fed2c", size = 44693, upload-time = "2025-01-03T18:51:56.698Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/ed/1f1afb2e9e7f38a545d628f864d562a5ae64fe6f7a10e28ffb9b185b4e89/importlib_resources-6.5.2-py3-none-any.whl", hash = "sha256:789cfdc3ed28c78b67a06acb8126751ced69a3d5f79c095a98298cd8a760ccec", size = 37461, upload-time = "2025-01-03T18:51:54.306Z" },
-]
-
-[[package]]
 name = "iniconfig"
 version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -318,14 +309,11 @@ wheels = [
 
 [[package]]
 name = "mcp-server-civis"
-version = "0.6.2"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "civis" },
     { name = "mcp" },
-    { name = "pydantic" },
-    { name = "typeshed-client" },
-    { name = "tzdata" },
 ]
 
 [package.dev-dependencies]
@@ -338,19 +326,16 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "civis", specifier = ">=2.5.0" },
-    { name = "mcp", specifier = ">=1.0.0" },
-    { name = "pydantic", specifier = ">=2.0.0" },
-    { name = "typeshed-client", specifier = ">=2.7.0" },
-    { name = "tzdata", specifier = ">=2024.2" },
+    { name = "civis", specifier = ">=2.7.0,<3" },
+    { name = "mcp", specifier = ">=1.0.0,<2" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "freezegun", specifier = ">=1.5.1" },
-    { name = "pyright", specifier = ">=1.1.389" },
-    { name = "pytest", specifier = ">=8.3.3" },
-    { name = "ruff", specifier = ">=0.8.1" },
+    { name = "freezegun", specifier = ">=1.5.1,<2" },
+    { name = "pyright", specifier = ">=1.1.389,<2" },
+    { name = "pytest", specifier = ">=8.3.3,<9" },
+    { name = "ruff", specifier = ">=0.8.1,<1" },
 ]
 
 [[package]]
@@ -854,19 +839,6 @@ wheels = [
 ]
 
 [[package]]
-name = "typeshed-client"
-version = "2.7.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "importlib-resources" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/65/1e/f20e33447be772486acf028295cdd21437454a051adb602d52ddb5334f9e/typeshed_client-2.7.0.tar.gz", hash = "sha256:e63df1e738588ad39f1226de042f4407ab6a99c456f0837063afd83b1415447c", size = 433569, upload-time = "2024-07-16T17:01:17.181Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fd/39/4702c2901899c018189b9aa7eb75aa8eb54527aed71c3f285895190dc664/typeshed_client-2.7.0-py3-none-any.whl", hash = "sha256:97084e5abc58a76ace2c4618ecaebd625f2d19bbd85aa1b3fb86216bf174bbea", size = 624417, upload-time = "2024-07-16T17:01:15.246Z" },
-]
-
-[[package]]
 name = "typing-extensions"
 version = "4.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -885,15 +857,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f8/b1/0c11f5058406b3af7609f121aaa6b609744687f1d158b3c3a5bf4cc94238/typing_inspection-0.4.1.tar.gz", hash = "sha256:6ae134cc0203c33377d43188d4064e9b357dba58cff3185f22924610e70a9d28", size = 75726, upload-time = "2025-05-21T18:55:23.885Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/17/69/cd203477f944c353c31bade965f880aa1061fd6bf05ded0726ca845b6ff7/typing_inspection-0.4.1-py3-none-any.whl", hash = "sha256:389055682238f53b04f7badcb49b989835495a96700ced5dab2d8feae4b26f51", size = 14552, upload-time = "2025-05-21T18:55:22.152Z" },
-]
-
-[[package]]
-name = "tzdata"
-version = "2025.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/95/32/1a225d6164441be760d75c2c42e2780dc0873fe382da3e98a2e1e48361e5/tzdata-2025.2.tar.gz", hash = "sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9", size = 196380, upload-time = "2025-03-23T13:54:43.652Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/23/c7abc0ca0a1526a0774eca151daeb8de62ec457e77262b66b359c3c7679e/tzdata-2025.2-py2.py3-none-any.whl", hash = "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8", size = 347839, upload-time = "2025-03-23T13:54:41.845Z" },
 ]
 
 [[package]]

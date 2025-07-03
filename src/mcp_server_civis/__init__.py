@@ -1,5 +1,8 @@
 from .server import serve
+from importlib.metadata import version
 import os
+
+__version__ = version("mcp_server_civis")
 
 
 def main():
