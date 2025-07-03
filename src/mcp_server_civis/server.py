@@ -86,7 +86,7 @@ class CivisServer:
 
     @register_tool(input_schema={"type": "object", "properties": {}})
     def list_table_tags(self):
-        """Get the tables in a database"""
+        """Get the list of possible table tags for a database"""
         return self.list_result(self.client.table_tags.list(iterator=True))
 
     @register_tool(
@@ -136,13 +136,13 @@ class CivisServer:
                 "user_id": {
                     "type": "array",
                     "items": {"type": "integer"},
-                    "description": "Optional user ID to filter workflows",
+                    "description": "Optional user ID to filter Workflows",
                 }
             },
         }
     )
     def list_workflows(self, user_id=None):
-        """Get recent workflows"""
+        """Get recent Workflows"""
         user_ids = [user_id] if user_id else None
         return self.list_result(self.client.workflows.list(author=user_ids, limit=100))
 
@@ -154,7 +154,7 @@ class CivisServer:
         }
     )
     def get_workflow(self, id):
-        """Get a specific workflow by ID"""
+        """Get a specific Workflow by ID"""
         return self.single_result(self.client.workflows.get(id))
 
     @register_tool(
@@ -170,7 +170,7 @@ class CivisServer:
         }
     )
     def list_workflow_executions(self, id):
-        """Get recent workflow executions"""
+        """Get recent Workflow executions"""
         return self.list_result(self.client.workflows.list_executions(id))
 
     @register_tool(
@@ -179,11 +179,11 @@ class CivisServer:
             "properties": {
                 "name": {
                     "type": "string",
-                    "description": "The name of the new workflow",
+                    "description": "The name of the new Workflow",
                 },
                 "description": {
                     "type": "string",
-                    "description": "A description of the new workflow",
+                    "description": "A description of the new Workflow",
                 },
                 "definition": {
                     "type": "string",
@@ -194,7 +194,7 @@ class CivisServer:
         }
     )
     def create_workflow(self, name, definition=None, description=None):
-        """Create a new workflow"""
+        """Create a new Workflow"""
         return self.single_result(
             self.client.workflows.post(
                 name=name, definition=definition, description=description
@@ -207,20 +207,20 @@ class CivisServer:
             "properties": {
                 "id": {
                     "type": "number",
-                    "description": "The ID of the workflow to execute",
+                    "description": "The ID of the Workflow to execute",
                 }
             },
             "required": ["id"],
         }
     )
     def create_workflow_execution(self, id):
-        """Execute a workflow"""
+        """Execute a Workflow"""
         return self.single_result(self.client.workflows.post_executions(id))
 
     ### Job tools ###
     @register_tool(input_schema={"type": "object", "properties": {}})
     def list_jobs(self):
-        """Get recent jobs"""
+        """Get recent Jobs"""
         return self.list_result(self.client.jobs.list())
 
     @register_tool(
@@ -231,7 +231,7 @@ class CivisServer:
         }
     )
     def get_job(self, id):
-        """Get recent workflows"""
+        """Get the details of a specific Job by ID"""
         return self.single_result(self.client.jobs.get(id))
 
     @register_tool(
@@ -242,7 +242,7 @@ class CivisServer:
         }
     )
     def run_job(self, id):
-        """Create a job run"""
+        """Create a Job run"""
         return self.single_result(self.client.jobs.post_runs(id))
 
     @register_tool(
@@ -256,7 +256,7 @@ class CivisServer:
         }
     )
     def get_job_run(self, job_id, run_id):
-        """Create a job run"""
+        """Get the details for a specific run of a Job"""
         return self.single_result(self.client.jobs.get_runs(job_id, run_id))
 
 

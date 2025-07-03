@@ -2,27 +2,6 @@
 
 A Model Context Protocol server that provides an interface to the Civis Platform
 
-## Installation
-
-### Using uv (recommended)
-
-When using [`uv`](https://docs.astral.sh/uv/) no specific installation is needed. We will
-use [`uvx`](https://docs.astral.sh/uv/guides/tools/) to directly run *mcp-server-civis*.
-
-### Using PIP
-
-Alternatively you can install `mcp-server-civis` via pip:
-
-```bash
-pip install mcp-server-civis
-```
-
-After installation, you can run it as a script using:
-
-```bash
-python -m mcp_server_civis
-```
-
 ## Configuration
 
 ### Configure for Claude.app
@@ -160,20 +139,18 @@ cd path/to/servers/src/time
 npx @modelcontextprotocol/inspector uv run mcp-server-civis
 ```
 
-## Examples of Questions for Claude
+## Examples of Questions
 
-1. "What time is it now?" (will use system timezone)
-2. "What time is it in Tokyo?"
-3. "When it's 4 PM in New York, what time is it in London?"
-4. "Convert 9:30 AM Tokyo time to New York time"
+1. "Query the donations table from the donors schema in Civis Platform. How many donations happened in the last 30 days compared to one year ago?"
+2. "Post this YAML file as a Civis workflow and execute it."
+3. "How long did my most recent workflow take to execute?"
 
 ## Build
 
 Docker build:
 
 ```bash
-cd src/civis_mcp
-docker build -t civisanalytics/mcp-server.
+docker build -t civisanalytics/mcp-server .
 ```
 
 ## Contributing
