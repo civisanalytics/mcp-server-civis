@@ -10,11 +10,16 @@ from mcp.types import Tool, TextContent
 
 
 class CivisServer:
-    def __init__(self, client, default_credential, default_database):
+    def __init__(self, client, default_credential, default_database, schema=None):
+        print(f"Initializing CivisServer", file=sys.stderr)
         self.client = client
         self.default_credential = default_credential
         self.default_database = default_database
+        self.schema = schema
+        if schema:
+            print(f"Schema filtering enabled for: {schema}", file=sys.stderr)
 
+    @staticmethod
     def register_tool(input_schema: Dict[str, Any]):
         """
         Decorator that sets the input_schema as an attribute on the function.
@@ -35,9 +40,19 @@ class CivisServer:
         """Generates a list of available tools based on registered methods,
         their docstrings, and the input schema."""
         tool_list = []
+
+        # If schema is provided, only allow specific tools
+        allowed_tools = None
+        if self.schema:
+            allowed_tools = {"run_query", "list_tables", "get_table"}
+
         for name in dir(self):
             attr = getattr(self, name)
             if callable(attr) and hasattr(attr, "tool"):
+                # Filter tools if schema is specified
+                if allowed_tools and name not in allowed_tools:
+                    continue
+
                 input_schema = getattr(attr, "__input_schema__", {})
                 tool = Tool(
                     name=name, description=attr.__doc__, inputSchema=input_schema
@@ -75,9 +90,11 @@ class CivisServer:
     )
     def list_tables(self, schema=None, table_tag_ids=None):
         """Get the tables in a database"""
+        # Use the server schema if provided, otherwise use the parameter
+        effective_schema = self.schema if self.schema else schema
         return self.list_result(
             self.client.tables.list(
-                schema=schema,
+                schema=effective_schema,
                 database_id=self.default_database,
                 table_tag_ids=table_tag_ids,
                 iterator=True,
@@ -260,16 +277,24 @@ class CivisServer:
         return self.single_result(self.client.jobs.get_runs(job_id, run_id))
 
 
-async def serve(api_key: str | None):
-    server = Server("mcp-civis")
+async def serve(api_key: str | None, schema: str | None = None, description: str | None = None):
+    print(f"Starting", file=sys.stderr)
+
+    # Create server with description if provided
+    server_name = "mcp-civis"
+    if description:
+        print(f"Server description: {description}", file=sys.stderr)
+
+    server = Server(server_name)
     client = civis.APIClient(
         api_key=api_key, user_agent=f"mcp-server-civis ({mcp_server_civis.__version__})"
     )
+    print(f"Built client", file=sys.stderr)
 
     default_credential = client.default_database_credential_id
     default_database = sorted([d.id for d in client.databases.list()])[0]
 
-    civis_server = CivisServer(client, default_credential, default_database)
+    civis_server = CivisServer(client, default_credential, default_database, schema)
 
     # TODO: Convert operations without side effects to resources
     @server.list_tools()

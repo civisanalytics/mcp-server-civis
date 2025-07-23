@@ -23,37 +23,6 @@ Add to your Claude settings:
 ```
 </details>
 
-
-### Configure for Zed
-
-Add to your Zed settings.json:
-
-<details>
-<summary>Using uvx</summary>
-
-```json
-"context_servers": [
-  "mcp-server-civis": {
-    "command": "uvx",
-    "args": ["mcp-server-civis"]
-  }
-],
-```
-</details>
-
-<details>
-<summary>Using pip installation</summary>
-
-```json
-"context_servers": {
-  "mcp-server-civis": {
-    "command": "python",
-    "args": ["-m", "mcp_server_civis"]
-  }
-},
-```
-</details>
-
 ### Configure for VS Code
 
 Add the following JSON block to your User Settings (JSON) file in VS Code. You can do this by pressing `Ctrl + Shift + P` and typing `Preferences: Open User Settings (JSON)`.
@@ -93,17 +62,14 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your workspace
 ```
 </details>
 
-### Customization - API key
+## Examples of Questions
 
-Example:
-```json
-{
-  "command": "python",
-  "args": ["-m", "mcp_server_civis", "--api-key=XXXXXXXXXXX"]
-}
-```
+1. "Query the donations table from the donors schema in Civis. How many donations happened in the last 30 days compared to one year ago?"
+2. "Add all the tables from the salesforce_prod schema in Civis as dbt sources. Include column names and types."
+3. "Post this YAML file as a Civis workflow and execute it."
+4. "How long did my most recent workflow take to execute?"
 
-## Installation
+## Local Installation
 
 ### Using uv (recommended)
 
@@ -138,12 +104,6 @@ Or if you've installed the package in a specific directory or are developing on 
 cd path/to/servers/src/time
 npx @modelcontextprotocol/inspector uv run mcp-server-civis
 ```
-
-## Examples of Questions
-
-1. "Query the donations table from the donors schema in Civis Platform. How many donations happened in the last 30 days compared to one year ago?"
-2. "Post this YAML file as a Civis workflow and execute it."
-3. "How long did my most recent workflow take to execute?"
 
 ## Build
 
