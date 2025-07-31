@@ -1,0 +1,20 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: uv sync --frozen
+      - run:
+          name: Run tests with pytest inside Docker
+          command: uv run pytest
+
+workflows:
+  version: 2
+  test_and_build:
+    jobs:
+      - test
