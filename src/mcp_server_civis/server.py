@@ -6,7 +6,7 @@ import mcp_server_civis
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.types import Tool, TextContent, PaginatedResult
 
 
 class CivisServer:
@@ -60,9 +60,15 @@ class CivisServer:
                 tool_list.append(tool)
         return tool_list
 
-    def list_result(self, result):
+    def list_result(self, result, last_cursor=None):
         parsed_result = [r.json() if hasattr(r, "json") else r for r in result]
-        return [TextContent(type="text", text=json.dumps(parsed_result))]
+        if last_cursor is None:
+            return [TextContent(type="text", text=json.dumps(parsed_result))]
+        next_cursor = last_cursor + 1
+        if len(parsed_result) == 0:
+            next_cursor = None
+        paginated_result = {"results": parsed_result, "nextCursor": next_cursor}
+        return [TextContent(type="text", text=json.dumps(paginated_result))]
 
     def single_result(self, result):
         parsed_result = result.json() if hasattr(result, "json") else result
@@ -135,7 +141,35 @@ class CivisServer:
         }
     )
     def run_query(self, query, resultRows=10):
-        """Run a query with the user's default credentials and database."""
+        """Run a query with the user's default credentials and database. Returns up to
+        1000 rows, depending on the resultRows parameter, so is best for small tables,
+        aggregates or samples."""
+        return self.single_result(
+            civis.io.query_civis(
+                query,
+                self.default_database,
+                client=self.client,
+                preview_rows=resultRows,
+            ).result()
+        )
+
+    @register_tool(
+        input_schema={
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "SQL query to execute"},
+                "resultRows": {
+                    "type": "number",
+                    "description": "The maximum number of rows to return from the query",
+                    "default": 10,
+                },
+            },
+            "required": ["query"],
+        }
+    )
+    def pull_data_list(self, query, resultRows=10):
+        """Run a query with the user's default credentials and database. Returns a URL
+        to download the data from. May be used for exporting larger results."""
         return self.single_result(
             civis.io.query_civis(
                 query,
@@ -154,14 +188,22 @@ class CivisServer:
                     "type": "array",
                     "items": {"type": "integer"},
                     "description": "Optional user ID to filter Workflows",
-                }
+                },
+                "cursor": {
+                    "type": "integer",
+                    "description": "Page number for pagination (default: 1)",
+                    "default": 1,
+                    "minimum": 1,
+                },
             },
         }
     )
-    def list_workflows(self, user_id=None):
-        """Get recent Workflows"""
+    def list_workflows(self, user_id=None, cursor=1):
+        """Get recent Workflows with pagination support"""
         user_ids = [user_id] if user_id else None
-        return self.list_result(self.client.workflows.list(author=user_ids, limit=100))
+        return self.list_result(
+            self.client.workflows.list(author=user_ids, page_num=cursor), cursor
+        )
 
     @register_tool(
         input_schema={
@@ -181,14 +223,22 @@ class CivisServer:
                 "id": {
                     "type": "integer",
                     "description": "Workflow ID to get executions for",
-                }
+                },
+                "cursor": {
+                    "type": "integer",
+                    "description": "Page number for pagination (default: 1)",
+                    "default": 1,
+                    "minimum": 1,
+                },
             },
             "required": ["id"],
         }
     )
-    def list_workflow_executions(self, id):
+    def list_workflow_executions(self, id, cursor=1):
         """Get recent Workflow executions"""
-        return self.list_result(self.client.workflows.list_executions(id))
+        return self.list_result(
+            self.client.workflows.list_executions(id, page_num=cursor)
+        )
 
     @register_tool(
         input_schema={
@@ -235,10 +285,38 @@ class CivisServer:
         return self.single_result(self.client.workflows.post_executions(id))
 
     ### Job tools ###
-    @register_tool(input_schema={"type": "object", "properties": {}})
-    def list_jobs(self):
+    @register_tool(
+        input_schema={
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": """
+                        The types of jobs to list. Specify multiple values as a comma-separated list (e.g., `A,B`).
+                        Valid job types include: JobTypes::Query, JobTypes::SqlRunner, JobTypes::CsvImport, 
+                        JobTypes::Import, JobTypes::ContainerDocker, JobTypes::AutoImport, JobTypes::Dbsync, 
+                        JobTypes::PythonDocker, JobTypes::ScriptedSql, JobTypes::GdocExport, JobTypes::GdocImport, 
+                        JobTypes::CsvExport, JobTypes::CassNcoa, JobTypes::RDocker, JobTypes::DbtDocker, 
+                        JobTypes::Geocode, JobTypes::IdentityResolution
+                      """,
+                },
+                "cursor": {
+                    "type": "integer",
+                    "description": "Page number for pagination (default: 1)",
+                    "default": 1,
+                    "minimum": 1,
+                },
+            },
+        }
+    )
+    def list_jobs(self, type=None, cursor=1):
         """Get recent Jobs"""
-        return self.list_result(self.client.jobs.list())
+        return self.list_result(
+            self.client.jobs.list(
+                type=type,
+                page_num=cursor,
+            )
+        )
 
     @register_tool(
         input_schema={
@@ -268,16 +346,26 @@ class CivisServer:
             "properties": {
                 "job_id": {"type": "integer", "description": "Job ID"},
                 "run_id": {"type": "integer", "description": "Run ID"},
+                "cursor": {
+                    "type": "integer",
+                    "description": "Page number for pagination (default: 1)",
+                    "default": 1,
+                    "minimum": 1,
+                },
             },
             "required": ["job_id", "run_id"],
         }
     )
-    def get_job_run(self, job_id, run_id):
+    def get_job_run(self, job_id, run_id, cursor=1):
         """Get the details for a specific run of a Job"""
-        return self.single_result(self.client.jobs.get_runs(job_id, run_id))
+        return self.single_result(
+            self.client.jobs.get_runs(job_id, run_id, page_num=cursor)
+        )
 
 
-async def serve(api_key: str | None, schema: str | None = None, description: str | None = None):
+async def serve(
+    api_key: str | None, schema: str | None = None, description: str | None = None
+):
     print(f"Starting", file=sys.stderr)
 
     # Create server with description if provided
