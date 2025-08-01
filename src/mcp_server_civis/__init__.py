@@ -19,21 +19,9 @@ def main():
         help="Override Civis API key",
         default=os.getenv("CIVIS_API_KEY"),
     )
-    parser.add_argument(
-        "--schema",
-        type=str,
-        help="Limit tools to a specific database schema",
-        default=None,
-    )
-    parser.add_argument(
-        "--description",
-        type=str,
-        help="Description for the MCP server metadata",
-        default=None,
-    )
 
     args = parser.parse_args()
-    asyncio.run(serve(args.api_key, args.schema, args.description))
+    asyncio.run(serve(args.api_key))
 
 
 if __name__ == "__main__":
