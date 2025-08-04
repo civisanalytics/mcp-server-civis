@@ -22,7 +22,8 @@ def main():
     parser.add_argument(
         "--schema",
         type=str,
-        help="Limit data tools to a specific database schema. Non-data tools will be disabled.",
+        help="""Limit data tools to a specific database schema.
+                Non-data tools will be disabled.""",
         default=None,
     )
     parser.add_argument(
