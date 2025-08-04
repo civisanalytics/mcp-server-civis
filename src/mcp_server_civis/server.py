@@ -10,10 +10,14 @@ from mcp.types import Tool, TextContent
 
 
 class CivisServer:
-    def __init__(self, client, default_credential, default_database):
+    def __init__(
+        self, client, default_credential, default_database, schema, description
+    ):
         self.client = client
         self.default_credential = default_credential
         self.default_database = default_database
+        self.schema = schema
+        self.description = description
 
     @staticmethod
     def register_tool(input_schema: Dict[str, Any]):
@@ -37,9 +41,14 @@ class CivisServer:
         their docstrings, and the input schema."""
         tool_list = []
 
+        allowed_tools = None
+        if self.schema:
+            allowed_tools = ["run_query", "list_tables", "get_table", "pull_data_list"]
         for name in dir(self):
             attr = getattr(self, name)
             if callable(attr) and hasattr(attr, "tool"):
+                if allowed_tools and name not in allowed_tools:
+                    continue
                 input_schema = getattr(attr, "__input_schema__", {})
                 tool = Tool(
                     name=name, description=attr.__doc__, inputSchema=input_schema
@@ -86,7 +95,7 @@ class CivisServer:
         # Use the server schema if provided, otherwise use the parameter
         return self.list_result(
             self.client.tables.list(
-                schema=schema,
+                schema=self.schema or schema,
                 database_id=self.default_database,
                 table_tag_ids=table_tag_ids,
                 iterator=True,
@@ -132,6 +141,7 @@ class CivisServer:
         """Run a query with the user's default credentials and database. Returns up to
         1000 rows, depending on the resultRows parameter, so is best for small tables,
         aggregates or samples."""
+        # TODO: validate schema selected and read-only
         return self.single_result(
             civis.io.query_civis(
                 query,
@@ -140,6 +150,29 @@ class CivisServer:
                 preview_rows=resultRows,
             ).result()
         )
+
+    @register_tool(
+        input_schema={
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "SQL query to execute"},
+            },
+            "required": ["query"],
+        }
+    )
+    def pull_data_list(self, query, resultRows=10):
+        """Run a query with the user's default credentials and database. Returns a URL
+        to download the data from. May be used for exporting larger results."""
+        # TODO: validate schema selected and read-only
+        sql_result = civis.io.export_to_civis_file(
+            query,
+            self.default_database,
+            job_name="MCP Export",
+            client=self.client,
+            hidden=True,
+        ).result()
+        result = {"urls": [o["path"] for o in sql_result["output"]]}
+        return self.single_result(result)
 
     # --- Workflow tools ---
     @register_tool(
@@ -323,7 +356,7 @@ class CivisServer:
         return self.single_result(self.client.jobs.get_runs(job_id, run_id))
 
 
-async def serve(api_key: str | None):
+async def serve(api_key: str | None, schema: str | None, description: str | None):
     # Create server with description if provided
     server_name = "mcp-civis"
 
@@ -335,7 +368,9 @@ async def serve(api_key: str | None):
     default_credential = client.default_database_credential_id
     default_database = sorted([d.id for d in client.databases.list()])[0]
 
-    civis_server = CivisServer(client, default_credential, default_database)
+    civis_server = CivisServer(
+        client, default_credential, default_database, schema, description
+    )
 
     # TODO: Convert operations without side effects to resources
     @server.list_tools()
