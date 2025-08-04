@@ -52,7 +52,7 @@ class CivisServer:
         if last_cursor is None:
             return [TextContent(type="text", text=json.dumps(parsed_result))]
         next_cursor = last_cursor + 1
-        if len(parsed_result) == 0:
+        if not parsed_result:
             next_cursor = None
         paginated_result = {"results": parsed_result, "nextCursor": next_cursor}
         return [TextContent(type="text", text=json.dumps(paginated_result))]
@@ -132,34 +132,6 @@ class CivisServer:
         """Run a query with the user's default credentials and database. Returns up to
         1000 rows, depending on the resultRows parameter, so is best for small tables,
         aggregates or samples."""
-        return self.single_result(
-            civis.io.query_civis(
-                query,
-                self.default_database,
-                client=self.client,
-                preview_rows=resultRows,
-            ).result()
-        )
-
-    @register_tool(
-        input_schema={
-            "type": "object",
-            "properties": {
-                "query": {"type": "string", "description": "SQL query to execute"},
-                "resultRows": {
-                    "type": "number",
-                    "description": """
-                        The maximum number of rows to return from the query
-                        """,
-                    "default": 10,
-                },
-            },
-            "required": ["query"],
-        }
-    )
-    def pull_data_list(self, query, resultRows=10):
-        """Run a query with the user's default credentials and database. Returns a URL
-        to download the data from. May be used for exporting larger results."""
         return self.single_result(
             civis.io.query_civis(
                 query,
