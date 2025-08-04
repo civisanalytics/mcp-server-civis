@@ -6,12 +6,11 @@ import mcp_server_civis
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent, PaginatedResult
+from mcp.types import Tool, TextContent
 
 
 class CivisServer:
     def __init__(self, client, default_credential, default_database):
-        print(f"Initializing CivisServer", file=sys.stderr)
         self.client = client
         self.default_credential = default_credential
         self.default_database = default_database
@@ -62,13 +61,13 @@ class CivisServer:
         parsed_result = result.json() if hasattr(result, "json") else result
         return [TextContent(type="text", text=json.dumps(parsed_result))]
 
-    ### User tools ###
+    # --- User tools ---
     @register_tool(input_schema={"type": "object", "properties": {}})
     def get_user(self):
         """Get my civis user information"""
         return self.single_result(self.client.users.list_me())
 
-    ### Table and query tools ###
+    # --- Table and query tools ---
     @register_tool(
         input_schema={
             "type": "object",
@@ -120,7 +119,9 @@ class CivisServer:
                 "query": {"type": "string", "description": "SQL query to execute"},
                 "resultRows": {
                     "type": "number",
-                    "description": "The maximum number of rows to return from the query",
+                    "description": """
+                        The maximum number of rows to return from the query
+                        """,
                     "default": 10,
                 },
             },
@@ -147,7 +148,9 @@ class CivisServer:
                 "query": {"type": "string", "description": "SQL query to execute"},
                 "resultRows": {
                     "type": "number",
-                    "description": "The maximum number of rows to return from the query",
+                    "description": """
+                        The maximum number of rows to return from the query
+                        """,
                     "default": 10,
                 },
             },
@@ -166,7 +169,7 @@ class CivisServer:
             ).result()
         )
 
-    ### Workflow tools ###
+    # --- Workflow tools ---
     @register_tool(
         input_schema={
             "type": "object",
@@ -272,7 +275,7 @@ class CivisServer:
         """Execute a Workflow"""
         return self.single_result(self.client.workflows.post_executions(id))
 
-    ### Job tools ###
+    # --- Job tools ---
     @register_tool(
         input_schema={
             "type": "object",
@@ -280,12 +283,16 @@ class CivisServer:
                 "type": {
                     "type": "string",
                     "description": """
-                        The types of jobs to list. Specify multiple values as a comma-separated list (e.g., `A,B`).
-                        Valid job types include: JobTypes::Query, JobTypes::SqlRunner, JobTypes::CsvImport, 
-                        JobTypes::Import, JobTypes::ContainerDocker, JobTypes::AutoImport, JobTypes::Dbsync, 
-                        JobTypes::PythonDocker, JobTypes::ScriptedSql, JobTypes::GdocExport, JobTypes::GdocImport, 
-                        JobTypes::CsvExport, JobTypes::CassNcoa, JobTypes::RDocker, JobTypes::DbtDocker, 
-                        JobTypes::Geocode, JobTypes::IdentityResolution
+                        The types of jobs to list. Specify multiple values as a
+                        comma-separated list (e.g., `A,B`).
+                        Valid job types include: JobTypes::Query, JobTypes::SqlRunner,
+                        JobTypes::CsvImport, JobTypes::Import,
+                        JobTypes::ContainerDocker, JobTypes::AutoImport,
+                        JobTypes::Dbsync, JobTypes::PythonDocker, JobTypes::ScriptedSql,
+                        JobTypes::GdocExport, JobTypes::GdocImport,
+                        JobTypes::CsvExport, JobTypes::CassNcoa, JobTypes::RDocker,
+                        JobTypes::DbtDocker, JobTypes::Geocode,
+                        JobTypes::IdentityResolution
                       """,
                 },
                 "cursor": {
@@ -345,8 +352,6 @@ class CivisServer:
 
 
 async def serve(api_key: str | None):
-    print(f"Starting", file=sys.stderr)
-
     # Create server with description if provided
     server_name = "mcp-civis"
 
