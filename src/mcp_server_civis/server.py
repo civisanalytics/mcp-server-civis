@@ -129,7 +129,8 @@ class CivisServer:
                 "resultRows": {
                     "type": "number",
                     "description": """
-                        The maximum number of rows to return from the query
+                        The maximum number of rows to return from the query.
+                        Must be <=1000.
                         """,
                     "default": 10,
                 },
@@ -194,7 +195,7 @@ class CivisServer:
         }
     )
     def list_workflows(self, user_id=None, cursor=1):
-        """Get recent Workflows with pagination support"""
+        """Get recent Workflows"""
         user_ids = [user_id] if user_id else None
         return self.list_result(
             self.client.workflows.list(author=user_ids, page_num=cursor),
