@@ -131,7 +131,8 @@ class CivisServer:
     )
     def run_query(self, query, resultRows=10):
         """Run a query with the user's default credentials and database. The maximum
-        value of resultRows is 1000, so is best for small tables, aggregates or samples."""
+        value of resultRows is 1000, so is best for small tables, aggregates
+        or samples."""
         return self.single_result(
             civis.io.query_civis(
                 query,
