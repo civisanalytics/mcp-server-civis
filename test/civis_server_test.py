@@ -60,16 +60,16 @@ def test_list_tools_with_schema_filter(m_civis):
         schema="test_schema",
         description=None,
     )
-    
+
     tools = server.tools()
     tool_names = {tool.name for tool in tools}
-    
+
     # When schema is provided, only these 4 tools should be available
     expected_tools = {"run_query", "list_tables", "get_table", "pull_data_list"}
-    
+
     assert len(tools) == 4
     assert tool_names == expected_tools
-    
+
     # Verify that other tools are filtered out
     assert "get_user" not in tool_names
     assert "list_workflows" not in tool_names
