@@ -120,7 +120,8 @@ class CivisServer:
                 "resultRows": {
                     "type": "number",
                     "description": """
-                        The maximum number of rows to return from the query
+                        The maximum number of rows to return from the query.
+                        Must be <=1000.
                         """,
                     "default": 10,
                 },
@@ -129,9 +130,8 @@ class CivisServer:
         }
     )
     def run_query(self, query, resultRows=10):
-        """Run a query with the user's default credentials and database. Returns up to
-        1000 rows, depending on the resultRows parameter, so is best for small tables,
-        aggregates or samples."""
+        """Run a query with the user's default credentials and database. The maximum
+        value of resultRows is 1000, so is best for small tables, aggregates or samples."""
         return self.single_result(
             civis.io.query_civis(
                 query,
@@ -161,7 +161,7 @@ class CivisServer:
         }
     )
     def list_workflows(self, user_id=None, cursor=1):
-        """Get recent Workflows with pagination support"""
+        """Get recent Workflows"""
         user_ids = [user_id] if user_id else None
         return self.list_result(
             self.client.workflows.list(author=user_ids, page_num=cursor),
@@ -324,7 +324,6 @@ class CivisServer:
 
 
 async def serve(api_key: str | None):
-    # Create server with description if provided
     server_name = "mcp-civis"
 
     server = Server(server_name)

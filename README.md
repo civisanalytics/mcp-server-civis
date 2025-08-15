@@ -127,7 +127,7 @@ Whether you want to add new time-related tools, enhance existing functionality,
 or improve documentation, your input is valuable.
 
 For examples of other MCP servers and implementation patterns, see:
-[https://github.com/modelcontextprotocol/servers]
+(https://github.com/modelcontextprotocol/servers)
 
 Pull requests are welcome! Feel free to contribute new ideas, bug fixes, or
 enhancements to make mcp-server-civis even more powerful and useful.
