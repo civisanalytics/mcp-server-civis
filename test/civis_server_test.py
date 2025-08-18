@@ -1,11 +1,8 @@
-import civis
 import pytest
 import json
 import unittest.mock as mock
-from mcp.shared.exceptions import McpError
 from civis.tests import create_client_mock
 import mcp_server_civis.server as civis_server
-import asyncio
 
 
 def basic_client_mock():
@@ -65,7 +62,13 @@ def test_list_tools_with_schema_filter(m_civis):
     tool_names = {tool.name for tool in tools}
 
     # When schema is provided, only these 4 tools should be available
-    expected_tools = {"run_query", "list_tables", "get_table", "pull_data_list", "publish_html_report"}
+    expected_tools = {
+        "run_query",
+        "list_tables",
+        "get_table",
+        "pull_data_list",
+        "publish_html_report"
+        }
 
     assert len(tools) == 5
     assert tool_names == expected_tools
@@ -197,7 +200,10 @@ def test_pull_data_list(m_civis):
     server = default_server(civis_mock)
     result = server.pull_data_list(query="SELECT * FROM large_table")[0].text
     expected_result = {
-        "urls": ["https://example.com/download1.csv", "https://example.com/download2.csv"]
+        "urls": [
+            "https://example.com/download1.csv",
+            "https://example.com/download2.csv"
+            ]
     }
     assert result == json.dumps(expected_result)
     m_civis.io.export_to_civis_file.assert_called_once_with(
@@ -398,10 +404,9 @@ def test_publish_html_report(m_civis):
         description="A test report"
     )[0].text
 
-    expected_result = mock_report_result.copy()
-    expected_result['url'] = (
-        "https://platform.civisanalytics.com/spa/#/reports/123?fullscreen=true"
-    )
+    expected_result = {
+        'url': "https://platform.civisanalytics.com/spa/#/reports/123?fullscreen=true"
+    }
 
     assert result == json.dumps(expected_result)
     civis_mock.reports.post.assert_called_once_with(

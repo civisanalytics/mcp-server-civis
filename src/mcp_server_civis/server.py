@@ -382,10 +382,6 @@ class CivisServer:
                 },
                 "name": {
                     "type": "string",
-                    "description": "A name for the report.",
-                },
-                "description": {
-                    "type": "string",
                     "description": "A short description of the report.",
                 },
             },
@@ -393,15 +389,15 @@ class CivisServer:
         })
     def publish_html_report(self, body: str, name: str | None, description: str | None):
         "Post a report or application in Civis for sharing."
-        result = self.client.reports.post(
+        post_result = self.client.reports.post(
             name=name,
             code_body=body,
             description=description
             )
-        result['url'] = (
-            "https://platform.civisanalytics.com/spa/#/reports/" +
-            str(result['id']) + "?fullscreen=true"
-        )
+        result = {
+            'url': ("https://platform.civisanalytics.com/spa/#/reports/" +
+                    str(post_result['id']) + "?fullscreen=true")
+        }
         return self.single_result(result)
 
 
