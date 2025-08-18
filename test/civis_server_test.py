@@ -77,35 +77,6 @@ def test_list_tools_with_schema_filter(m_civis):
 
 
 @mock.patch.object(civis_server, "civis")
-def test_list_tools_with_schema_filter(m_civis):
-    civis_mock = basic_client_mock()
-    m_civis.APIClient.return_value = civis_mock
-
-    # Create server with schema to enable filtering
-    server = civis_server.CivisServer(
-        civis_mock,
-        default_credential=3,
-        default_database=5,
-        schema="test_schema",
-        description=None,
-    )
-
-    tools = server.tools()
-    tool_names = {tool.name for tool in tools}
-
-    # When schema is provided, only these 4 tools should be available
-    expected_tools = {"run_query", "list_tables", "get_table", "pull_data_list", "publish_html_report"}
-
-    assert len(tools) == 5
-    assert tool_names == expected_tools
-
-    # Verify that other tools are filtered out
-    assert "get_user" not in tool_names
-    assert "list_workflows" not in tool_names
-    assert "list_jobs" not in tool_names
-
-
-@mock.patch.object(civis_server, "civis")
 def test_get_user(m_civis):
     civis_mock = basic_client_mock()
     mock_user = {"id": 1, "name": "test_user"}
@@ -207,34 +178,6 @@ def test_run_query_with_result_rows(m_civis):
     assert result == json.dumps(expected_result)
     m_civis.io.query_civis.assert_called_once_with(
         "SELECT * FROM test", 5, client=civis_mock, preview_rows=5
-    )
-
-
-@mock.patch.object(civis_server, "civis")
-def test_pull_data_list(m_civis):
-    civis_mock = basic_client_mock()
-    mock_export_result = mock.Mock()
-    mock_export_result.result.return_value = {
-        "output": [
-            {"path": "https://example.com/download1.csv"},
-            {"path": "https://example.com/download2.csv"}
-        ]
-    }
-    m_civis.io.export_to_civis_file.return_value = mock_export_result
-    m_civis.APIClient.return_value = civis_mock
-
-    server = default_server(civis_mock)
-    result = server.pull_data_list(query="SELECT * FROM large_table")[0].text
-    expected_result = {
-        "urls": ["https://example.com/download1.csv", "https://example.com/download2.csv"]
-    }
-    assert result == json.dumps(expected_result)
-    m_civis.io.export_to_civis_file.assert_called_once_with(
-        "SELECT * FROM large_table",
-        5,
-        job_name="MCP Export",
-        client=civis_mock,
-        hidden=True,
     )
 
 
@@ -456,7 +399,9 @@ def test_publish_html_report(m_civis):
     )[0].text
 
     expected_result = mock_report_result.copy()
-    expected_result['url'] = "https://platform.civisanalytics.com/spa/#/reports/123?fullscreen=true"
+    expected_result['url'] = (
+        "https://platform.civisanalytics.com/spa/#/reports/123?fullscreen=true"
+    )
 
     assert result == json.dumps(expected_result)
     civis_mock.reports.post.assert_called_once_with(
