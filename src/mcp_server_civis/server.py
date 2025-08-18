@@ -142,7 +142,11 @@ class CivisServer:
         """Run a query with the user's default credentials and database. Returns up to
         1000 rows, depending on the resultRows parameter, so is best for small tables,
         aggregates or samples."""
-        # TODO: validate schema selected and read-only
+        if self.schema:
+            if self.schema not in query:
+                raise ValueError("Specified schema was not in query")
+            query = "BEGIN READ ONLY; " + query
+
         return self.single_result(
             civis.io.query_civis(
                 query,
@@ -164,7 +168,10 @@ class CivisServer:
     def pull_data_list(self, query, resultRows=10):
         """Run a query with the user's default credentials and database. Returns a URL
         to download the data from. May be used for exporting larger results."""
-        # TODO: validate schema selected and read-only
+        if self.schema:
+            if self.schema not in query:
+                raise ValueError("Specified schema was not in query")
+            query = "BEGIN READ ONLY; " + query
         sql_result = civis.io.export_to_civis_file(
             query,
             self.default_database,
@@ -355,6 +362,34 @@ class CivisServer:
     def get_job_run(self, job_id, run_id):
         """Get the details for a specific run of a Job"""
         return self.single_result(self.client.jobs.get_runs(job_id, run_id))
+
+
+    # --- Report tools ---
+    @register_tool(
+        input_schema={
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "description": """An HTML document. All links to javascript or
+                        stylesheets must be absolute references, ideally
+                        hosted on CDNs, not hosted by an LLM provider."""
+                },
+                "name": {
+                    "type": "string",
+                    "description": "A name for the report.",
+                },
+                "description": {
+                    "type": "string",
+                    "description": "A short description of the report.",
+                },
+            },
+            "required": ["body"],
+        })
+    def publish_html_report(self, body: str, name: str | None, description: str | None):
+        """Post a report or application in Civis for sharing. The report must be
+           in HTML and include absolute references to any linked scripts or stylesheets."""
+        return self.single_result(self.client.reports.post(name=name, code_body=body))
 
 
 async def serve(api_key: str | None, schema: str | None, description: str | None):
