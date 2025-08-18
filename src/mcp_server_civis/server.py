@@ -15,6 +15,7 @@ class CivisServer:
         self.default_credential = default_credential
         self.default_database = default_database
 
+    @staticmethod
     def register_tool(input_schema: Dict[str, Any]):
         """
         Decorator that sets the input_schema as an attribute on the function.
@@ -35,6 +36,7 @@ class CivisServer:
         """Generates a list of available tools based on registered methods,
         their docstrings, and the input schema."""
         tool_list = []
+
         for name in dir(self):
             attr = getattr(self, name)
             if callable(attr) and hasattr(attr, "tool"):
@@ -45,21 +47,27 @@ class CivisServer:
                 tool_list.append(tool)
         return tool_list
 
-    def list_result(self, result):
+    def list_result(self, result, last_cursor=None):
         parsed_result = [r.json() if hasattr(r, "json") else r for r in result]
-        return [TextContent(type="text", text=json.dumps(parsed_result))]
+        if last_cursor is None:
+            return [TextContent(type="text", text=json.dumps(parsed_result))]
+        next_cursor = last_cursor + 1
+        if not parsed_result:
+            next_cursor = None
+        paginated_result = {"results": parsed_result, "nextCursor": next_cursor}
+        return [TextContent(type="text", text=json.dumps(paginated_result))]
 
     def single_result(self, result):
         parsed_result = result.json() if hasattr(result, "json") else result
         return [TextContent(type="text", text=json.dumps(parsed_result))]
 
-    ### User tools ###
+    # --- User tools ---
     @register_tool(input_schema={"type": "object", "properties": {}})
     def get_user(self):
         """Get my civis user information"""
         return self.single_result(self.client.users.list_me())
 
-    ### Table and query tools ###
+    # --- Table and query tools ---
     @register_tool(
         input_schema={
             "type": "object",
@@ -75,6 +83,7 @@ class CivisServer:
     )
     def list_tables(self, schema=None, table_tag_ids=None):
         """Get the tables in a database"""
+        # Use the server schema if provided, otherwise use the parameter
         return self.list_result(
             self.client.tables.list(
                 schema=schema,
@@ -110,7 +119,10 @@ class CivisServer:
                 "query": {"type": "string", "description": "SQL query to execute"},
                 "resultRows": {
                     "type": "number",
-                    "description": "The maximum number of rows to return from the query",
+                    "description": """
+                        The maximum number of rows to return from the query.
+                        Must be <=1000.
+                        """,
                     "default": 10,
                 },
             },
@@ -118,7 +130,9 @@ class CivisServer:
         }
     )
     def run_query(self, query, resultRows=10):
-        """Run a query with the user's default credentials and database."""
+        """Run a query with the user's default credentials and database. The maximum
+        value of resultRows is 1000, so is best for small tables, aggregates
+        or samples."""
         return self.single_result(
             civis.io.query_civis(
                 query,
@@ -128,7 +142,7 @@ class CivisServer:
             ).result()
         )
 
-    ### Workflow tools ###
+    # --- Workflow tools ---
     @register_tool(
         input_schema={
             "type": "object",
@@ -137,14 +151,23 @@ class CivisServer:
                     "type": "array",
                     "items": {"type": "integer"},
                     "description": "Optional user ID to filter Workflows",
-                }
+                },
+                "cursor": {
+                    "type": "integer",
+                    "description": "Page number for pagination (default: 1)",
+                    "default": 1,
+                    "minimum": 1,
+                },
             },
         }
     )
-    def list_workflows(self, user_id=None):
+    def list_workflows(self, user_id=None, cursor=1):
         """Get recent Workflows"""
         user_ids = [user_id] if user_id else None
-        return self.list_result(self.client.workflows.list(author=user_ids, limit=100))
+        return self.list_result(
+            self.client.workflows.list(author=user_ids, page_num=cursor),
+            cursor,
+        )
 
     @register_tool(
         input_schema={
@@ -164,14 +187,22 @@ class CivisServer:
                 "id": {
                     "type": "integer",
                     "description": "Workflow ID to get executions for",
-                }
+                },
+                "cursor": {
+                    "type": "integer",
+                    "description": "Page number for pagination (default: 1)",
+                    "default": 1,
+                    "minimum": 1,
+                },
             },
             "required": ["id"],
         }
     )
-    def list_workflow_executions(self, id):
+    def list_workflow_executions(self, id, cursor=1):
         """Get recent Workflow executions"""
-        return self.list_result(self.client.workflows.list_executions(id))
+        return self.list_result(
+            self.client.workflows.list_executions(id, page_num=cursor), cursor
+        )
 
     @register_tool(
         input_schema={
@@ -217,11 +248,44 @@ class CivisServer:
         """Execute a Workflow"""
         return self.single_result(self.client.workflows.post_executions(id))
 
-    ### Job tools ###
-    @register_tool(input_schema={"type": "object", "properties": {}})
-    def list_jobs(self):
+    # --- Job tools ---
+    @register_tool(
+        input_schema={
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": """
+                        The types of jobs to list. Specify multiple values as a
+                        comma-separated list (e.g., `A,B`).
+                        Valid job types include: JobTypes::Query, JobTypes::SqlRunner,
+                        JobTypes::CsvImport, JobTypes::Import,
+                        JobTypes::ContainerDocker, JobTypes::AutoImport,
+                        JobTypes::Dbsync, JobTypes::PythonDocker, JobTypes::ScriptedSql,
+                        JobTypes::GdocExport, JobTypes::GdocImport,
+                        JobTypes::CsvExport, JobTypes::CassNcoa, JobTypes::RDocker,
+                        JobTypes::DbtDocker, JobTypes::Geocode,
+                        JobTypes::IdentityResolution
+                      """,
+                },
+                "cursor": {
+                    "type": "integer",
+                    "description": "Page number for pagination (default: 1)",
+                    "default": 1,
+                    "minimum": 1,
+                },
+            },
+        }
+    )
+    def list_jobs(self, type=None, cursor=1):
         """Get recent Jobs"""
-        return self.list_result(self.client.jobs.list())
+        return self.list_result(
+            self.client.jobs.list(
+                type=type,
+                page_num=cursor,
+            ),
+            cursor,
+        )
 
     @register_tool(
         input_schema={
@@ -261,7 +325,9 @@ class CivisServer:
 
 
 async def serve(api_key: str | None):
-    server = Server("mcp-civis")
+    server_name = "mcp-civis"
+
+    server = Server(server_name)
     client = civis.APIClient(
         api_key=api_key, user_agent=f"mcp-server-civis ({mcp_server_civis.__version__})"
     )

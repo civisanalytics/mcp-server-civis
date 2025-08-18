@@ -12,6 +12,9 @@ jobs:
       - run:
           name: Run tests with pytest inside Docker
           command: uv run pytest
+      - run:
+          name: Lint
+          command: uv run flake8 src
 
 workflows:
   version: 2
