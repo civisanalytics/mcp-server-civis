@@ -65,9 +65,38 @@ def test_list_tools_with_schema_filter(m_civis):
     tool_names = {tool.name for tool in tools}
 
     # When schema is provided, only these 4 tools should be available
-    expected_tools = {"run_query", "list_tables", "get_table", "pull_data_list"}
+    expected_tools = {"run_query", "list_tables", "get_table", "pull_data_list", "publish_html_report"}
 
-    assert len(tools) == 4
+    assert len(tools) == 5
+    assert tool_names == expected_tools
+
+    # Verify that other tools are filtered out
+    assert "get_user" not in tool_names
+    assert "list_workflows" not in tool_names
+    assert "list_jobs" not in tool_names
+
+
+@mock.patch.object(civis_server, "civis")
+def test_list_tools_with_schema_filter(m_civis):
+    civis_mock = basic_client_mock()
+    m_civis.APIClient.return_value = civis_mock
+
+    # Create server with schema to enable filtering
+    server = civis_server.CivisServer(
+        civis_mock,
+        default_credential=3,
+        default_database=5,
+        schema="test_schema",
+        description=None,
+    )
+
+    tools = server.tools()
+    tool_names = {tool.name for tool in tools}
+
+    # When schema is provided, only these 4 tools should be available
+    expected_tools = {"run_query", "list_tables", "get_table", "pull_data_list", "publish_html_report"}
+
+    assert len(tools) == 5
     assert tool_names == expected_tools
 
     # Verify that other tools are filtered out
@@ -178,6 +207,34 @@ def test_run_query_with_result_rows(m_civis):
     assert result == json.dumps(expected_result)
     m_civis.io.query_civis.assert_called_once_with(
         "SELECT * FROM test", 5, client=civis_mock, preview_rows=5
+    )
+
+
+@mock.patch.object(civis_server, "civis")
+def test_pull_data_list(m_civis):
+    civis_mock = basic_client_mock()
+    mock_export_result = mock.Mock()
+    mock_export_result.result.return_value = {
+        "output": [
+            {"path": "https://example.com/download1.csv"},
+            {"path": "https://example.com/download2.csv"}
+        ]
+    }
+    m_civis.io.export_to_civis_file.return_value = mock_export_result
+    m_civis.APIClient.return_value = civis_mock
+
+    server = default_server(civis_mock)
+    result = server.pull_data_list(query="SELECT * FROM large_table")[0].text
+    expected_result = {
+        "urls": ["https://example.com/download1.csv", "https://example.com/download2.csv"]
+    }
+    assert result == json.dumps(expected_result)
+    m_civis.io.export_to_civis_file.assert_called_once_with(
+        "SELECT * FROM large_table",
+        5,
+        job_name="MCP Export",
+        client=civis_mock,
+        hidden=True,
     )
 
 
@@ -377,3 +434,142 @@ def test_get_job_run(m_civis):
     result = server.get_job_run(job_id=123, run_id=456)[0].text
     assert result == json.dumps(mock_job_run)
     civis_mock.jobs.get_runs.assert_called_once_with(123, 456)
+
+
+@mock.patch.object(civis_server, "civis")
+def test_publish_html_report(m_civis):
+    civis_mock = basic_client_mock()
+    mock_report_result = {
+        "id": 123,
+        "name": "Test Report",
+        "description": "A test report",
+        "code_body": "<html><body>Hello World</body></html>"
+    }
+    civis_mock.reports.post.return_value = mock_report_result
+    m_civis.APIClient.return_value = civis_mock
+
+    server = default_server(civis_mock)
+    result = server.publish_html_report(
+        body="<html><body>Hello World</body></html>",
+        name="Test Report",
+        description="A test report"
+    )[0].text
+
+    expected_result = mock_report_result.copy()
+    expected_result['url'] = "https://platform.civisanalytics.com/spa/#/reports/123?fullscreen=true"
+
+    assert result == json.dumps(expected_result)
+    civis_mock.reports.post.assert_called_once_with(
+        name="Test Report",
+        code_body="<html><body>Hello World</body></html>",
+        description="A test report"
+    )
+
+
+@mock.patch.object(civis_server, "civis")
+def test_run_query_with_schema_adds_readonly_transaction(m_civis):
+    civis_mock = basic_client_mock()
+    mock_query_result = mock.Mock()
+    mock_query_result.result.return_value = {
+        "data": [["row1"]],
+        "columns": ["col1"],
+    }
+    m_civis.io.query_civis.return_value = mock_query_result
+    m_civis.APIClient.return_value = civis_mock
+
+    # Create server with schema
+    server = civis_server.CivisServer(
+        civis_mock,
+        default_credential=3,
+        default_database=5,
+        schema="test_schema",
+        description=None,
+    )
+
+    server.run_query(query="SELECT * FROM test_schema.test_table")
+
+    # Verify that the query was wrapped in BEGIN READ ONLY
+    m_civis.io.query_civis.assert_called_once_with(
+        "BEGIN READ ONLY; SELECT * FROM test_schema.test_table",
+        5,
+        client=civis_mock,
+        preview_rows=10
+    )
+
+
+@mock.patch.object(civis_server, "civis")
+def test_pull_data_list_with_schema_adds_readonly_transaction(m_civis):
+    civis_mock = basic_client_mock()
+    mock_export_result = mock.Mock()
+    mock_export_result.result.return_value = {
+        "output": [
+            {"path": "https://example.com/file1.csv"},
+            {"path": "https://example.com/file2.csv"}
+        ]
+    }
+    m_civis.io.export_to_civis_file.return_value = mock_export_result
+    m_civis.APIClient.return_value = civis_mock
+
+    # Create server with schema
+    server = civis_server.CivisServer(
+        civis_mock,
+        default_credential=3,
+        default_database=5,
+        schema="test_schema",
+        description=None,
+    )
+
+    server.pull_data_list(query="SELECT * FROM test_schema.large_table")
+
+    # Verify that the query was wrapped in BEGIN READ ONLY
+    m_civis.io.export_to_civis_file.assert_called_once_with(
+        "BEGIN READ ONLY; SELECT * FROM test_schema.large_table",
+        5,
+        job_name="MCP Export",
+        client=civis_mock,
+        hidden=True
+    )
+
+
+@mock.patch.object(civis_server, "civis")
+def test_run_query_with_schema_validates_schema_in_query(m_civis):
+    civis_mock = basic_client_mock()
+    m_civis.APIClient.return_value = civis_mock
+
+    # Create server with schema
+    server = civis_server.CivisServer(
+        civis_mock,
+        default_credential=3,
+        default_database=5,
+        schema="test_schema",
+        description=None,
+    )
+
+    # Test that query without schema raises ValueError
+    with pytest.raises(ValueError, match="Specified schema was not in query"):
+        server.run_query(query="SELECT * FROM other_schema.test_table")
+
+    # Verify that query_civis was never called
+    m_civis.io.query_civis.assert_not_called()
+
+
+@mock.patch.object(civis_server, "civis")
+def test_pull_data_list_with_schema_validates_schema_in_query(m_civis):
+    civis_mock = basic_client_mock()
+    m_civis.APIClient.return_value = civis_mock
+
+    # Create server with schema
+    server = civis_server.CivisServer(
+        civis_mock,
+        default_credential=3,
+        default_database=5,
+        schema="test_schema",
+        description=None,
+    )
+
+    # Test that query without schema raises ValueError
+    with pytest.raises(ValueError, match="Specified schema was not in query"):
+        server.pull_data_list(query="SELECT * FROM other_schema.large_table")
+
+    # Verify that export_to_civis_file was never called
+    m_civis.io.export_to_civis_file.assert_not_called()

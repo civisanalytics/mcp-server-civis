@@ -43,7 +43,13 @@ class CivisServer:
 
         allowed_tools = None
         if self.schema:
-            allowed_tools = ["run_query", "list_tables", "get_table", "pull_data_list"]
+            allowed_tools = [
+                "run_query",
+                "list_tables",
+                "get_table",
+                "pull_data_list",
+                "publish_html_report"
+                ]
         for name in dir(self):
             attr = getattr(self, name)
             if callable(attr) and hasattr(attr, "tool"):
@@ -363,7 +369,6 @@ class CivisServer:
         """Get the details for a specific run of a Job"""
         return self.single_result(self.client.jobs.get_runs(job_id, run_id))
 
-
     # --- Report tools ---
     @register_tool(
         input_schema={
@@ -387,9 +392,17 @@ class CivisServer:
             "required": ["body"],
         })
     def publish_html_report(self, body: str, name: str | None, description: str | None):
-        """Post a report or application in Civis for sharing. The report must be
-           in HTML and include absolute references to any linked scripts or stylesheets."""
-        return self.single_result(self.client.reports.post(name=name, code_body=body))
+        "Post a report or application in Civis for sharing."
+        result = self.client.reports.post(
+            name=name,
+            code_body=body,
+            description=description
+            )
+        result['url'] = (
+            "https://platform.civisanalytics.com/spa/#/reports/" +
+            str(result['id']) + "?fullscreen=true"
+        )
+        return self.single_result(result)
 
 
 async def serve(api_key: str | None, schema: str | None, description: str | None):
