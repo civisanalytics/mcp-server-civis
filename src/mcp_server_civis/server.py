@@ -382,10 +382,14 @@ class CivisServer:
                 },
                 "name": {
                     "type": "string",
+                    "description": "The name of the report.",
+                },
+                "description": {
+                    "type": "string",
                     "description": "A short description of the report.",
                 },
             },
-            "required": ["body"],
+            "required": ["body", "name", "description"],
         })
     def publish_html_report(self, body: str, name: str | None, description: str | None):
         "Post a report or application in Civis for sharing."

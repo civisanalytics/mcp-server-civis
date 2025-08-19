@@ -61,7 +61,7 @@ def test_list_tools_with_schema_filter(m_civis):
     tools = server.tools()
     tool_names = {tool.name for tool in tools}
 
-    # When schema is provided, only these 4 tools should be available
+    # When schema is provided, only these tools should be available
     expected_tools = {
         "run_query",
         "list_tables",
