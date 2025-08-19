@@ -146,7 +146,7 @@ class CivisServer:
     )
     def run_query(self, query, resultRows=10):
         """Run a query with the user's default credentials and database. Returns up to
-        1000 rows, depending on the resultRows parameter, so is best for small tables,
+        1000 rows, depending on the resultRows parameter. Best used for small tables,
         aggregates or samples."""
         if self.schema:
             if self.schema not in query:
