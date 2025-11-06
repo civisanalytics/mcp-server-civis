@@ -6,23 +6,24 @@ A Model Context Protocol server that provides an interface to the Civis Platform
 
 ### Configure for Claude.app
 
-Add to your Claude settings:
-
-<details>
-<summary>Using docker</summary>
+Add the following to your Claude settings:
 
 ```json
 {
   "mcpServers": {
     "civis": {
       "command": "docker",
-      "args": ["run", "-i", "--rm", "civis/mcp-server"]
+      "args": ["run", "-i", "--rm", "-e", "CIVIS_API_KEY" "civisanalytics/mcp-server"],
+      "env": {
+        "CIVIS_API_KEY": "Put a valid API key here"
+      }
     }
   }
 }
 ```
 
-</details>
+The settings file is at `~/Library/Application\ Support/Claude/claude_desktop_config.json` on MacOS.
+You'll need to add a valid Civis API key to the file, so make sure to run `chmod 600` to restrict access to that file, and never commit it to version control.
 
 ### Configure for VS Code
 
@@ -34,9 +35,6 @@ Optionally, you can add it to a file called `.vscode/mcp.json` in your
 workspace. This will allow you to share the configuration with others.
 
 > Note that the `mcp` key is needed when using the `mcp.json` file.
-
-<details>
-<summary>Using Docker</summary>
 
 ```json
 {
@@ -55,7 +53,7 @@ workspace. This will allow you to share the configuration with others.
           "-i",
           "--rm",
           "-e", "CIVIS_API_KEY",
-          "civis/mcp-server",
+          "civisanalytics/mcp-server",
       ],
       "env": {
           "CIVIS_API_KEY": "${input:CIVIS_API_KEY}"
@@ -64,8 +62,6 @@ workspace. This will allow you to share the configuration with others.
   }
 }
 ```
-
-</details>
 
 ## Examples of Questions
 
