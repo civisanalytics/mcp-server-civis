@@ -130,6 +130,6 @@ enhancements to make mcp-server-civis even more powerful and useful.
 
 ## License
 
-mcp-server-civis is licensed under the MIT License. This means you are free to use,
-modify, and distribute the software, subject to the terms and conditions of the MIT
-License. For more details, please see the LICENSE file in the project repository.
+mcp-server-civis is licensed under the 3-Clause BSD License. This means you are free to use,
+modify, and distribute the software, subject to the terms and conditions of that license.
+For more details, please see the LICENSE.md file in the project repository.
