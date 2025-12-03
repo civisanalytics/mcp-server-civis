@@ -14,23 +14,27 @@ logger = logging.getLogger(__name__)
 PENDO_TRACK_URL = "https://app.pendo.io/data/track"
 
 
-async def track_pendo_event(event_name: str, properties: Optional[Dict[str, Any]] = None) -> None:
+async def track_pendo_event(
+    event_name: str,
+    properties: Optional[Dict[str, Any]] = None
+) -> None:
     """
     Send a track event to Pendo's server-side API.
-    
+
     Args:
         event_name: Name of the event to track
         properties: Additional event properties (optional)
     """
-    # Read environment variables at runtime to allow testing with mocked env vars
+    # Read environment variables at runtime to allow testing
     pendo_key = os.getenv("PENDO_TRACK_EVENT_SECRET_KEY", "")
     user_id = os.getenv("USER_ID", "unknown")
     org_name = os.getenv("ORGANIZATION_NAME", "unknown")
     studio_env = os.getenv("STUDIO_ENV", "production")
-    
+
     if not pendo_key:
         logger.warning(
-            f"[MCP Server] Pendo Track Secret not configured, skipping event: {event_name}"
+            f"[MCP Server] Pendo Track Secret not configured, "
+            f"skipping event: {event_name}"
         )
         return
 

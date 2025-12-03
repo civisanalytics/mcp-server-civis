@@ -442,7 +442,7 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
         await track_pendo_event("tool_invoked", {
             "tool_name": name,
         })
-        
+
         try:
             return getattr(civis_server, name)(**arguments)
 
