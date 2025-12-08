@@ -82,7 +82,6 @@ class CivisServer:
     @register_tool(input_schema={"type": "object", "properties": {}})
     def get_user(self):
         """Get my civis user information"""
-        print("[MCP] Executing get_user", file=sys.stderr)
         return self.single_result(self.client.users.list_me())
 
     # --- Table and query tools ---
@@ -102,7 +101,6 @@ class CivisServer:
     def list_tables(self, schema=None, table_tag_ids=None):
         """Get the tables in a database"""
         # Use the server schema if provided, otherwise use the parameter
-        print(f"[MCP] Executing list_tables: schema={self.schema or schema}, table_tag_ids={table_tag_ids}", file=sys.stderr)
         return self.list_result(
             self.client.tables.list(
                 schema=self.schema or schema,
@@ -115,7 +113,6 @@ class CivisServer:
     @register_tool(input_schema={"type": "object", "properties": {}})
     def list_table_tags(self):
         """Get the list of possible table tags for a database"""
-        print("[MCP] Executing list_table_tags", file=sys.stderr)
         return self.list_result(self.client.table_tags.list(iterator=True))
 
     @register_tool(
@@ -130,7 +127,6 @@ class CivisServer:
     def get_table(self, id):
         """Get information about a specific table including columns, sample rows,
         and how recently the table was updated."""
-        print(f"[MCP] Executing get_table: id={id}", file=sys.stderr)
         return self.single_result(self.client.tables.get(id=id))
 
     @register_tool(
@@ -154,7 +150,6 @@ class CivisServer:
         """Run a query with the user's default credentials and database. Returns up to
         1000 rows, depending on the resultRows parameter. Best used for small tables,
         aggregates or samples."""
-        print(f"[MCP] Executing run_query: resultRows={resultRows}, query_length={len(query)}", file=sys.stderr)
         if self.schema:
             if self.schema not in query:
                 raise ValueError("Specified schema was not in query")
@@ -181,7 +176,6 @@ class CivisServer:
     def pull_data_list(self, query, resultRows=10):
         """Run a query with the user's default credentials and database. Returns a URL
         to download the data from. May be used for exporting larger results."""
-        print(f"[MCP] Executing pull_data_list: query_length={len(query)}", file=sys.stderr)
         if self.schema:
             if self.schema not in query:
                 raise ValueError("Specified schema was not in query")
@@ -217,7 +211,6 @@ class CivisServer:
     )
     def list_workflows(self, user_id=None, cursor=1):
         """Get recent Workflows"""
-        print(f"[MCP] Executing list_workflows: user_id={user_id}, cursor={cursor}", file=sys.stderr)
         user_ids = [user_id] if user_id else None
         return self.list_result(
             self.client.workflows.list(author=user_ids, page_num=cursor),
@@ -233,7 +226,6 @@ class CivisServer:
     )
     def get_workflow(self, id):
         """Get a specific Workflow by ID"""
-        print(f"[MCP] Executing get_workflow: id={id}", file=sys.stderr)
         return self.single_result(self.client.workflows.get(id))
 
     @register_tool(
@@ -256,7 +248,6 @@ class CivisServer:
     )
     def list_workflow_executions(self, id, cursor=1):
         """Get recent Workflow executions"""
-        print(f"[MCP] Executing list_workflow_executions: id={id}, cursor={cursor}", file=sys.stderr)
         return self.list_result(
             self.client.workflows.list_executions(id, page_num=cursor), cursor
         )
@@ -283,7 +274,6 @@ class CivisServer:
     )
     def create_workflow(self, name, definition=None, description=None):
         """Create a new Workflow"""
-        print(f"[MCP] Executing create_workflow: name={name}", file=sys.stderr)
         return self.single_result(
             self.client.workflows.post(
                 name=name, definition=definition, description=description
@@ -304,7 +294,6 @@ class CivisServer:
     )
     def create_workflow_execution(self, id):
         """Execute a Workflow"""
-        print(f"[MCP] Executing create_workflow_execution: id={id}", file=sys.stderr)
         return self.single_result(self.client.workflows.post_executions(id))
 
     # --- Job tools ---
@@ -338,7 +327,6 @@ class CivisServer:
     )
     def list_jobs(self, type=None, cursor=1):
         """Get recent Jobs"""
-        print(f"[MCP] Executing list_jobs: type={type}, cursor={cursor}", file=sys.stderr)
         return self.list_result(
             self.client.jobs.list(
                 type=type,
@@ -356,7 +344,6 @@ class CivisServer:
     )
     def get_job(self, id):
         """Get the details of a specific Job by ID"""
-        print(f"[MCP] Executing get_job: id={id}", file=sys.stderr)
         return self.single_result(self.client.jobs.get(id))
 
     @register_tool(
@@ -368,7 +355,6 @@ class CivisServer:
     )
     def run_job(self, id):
         """Create a Job run"""
-        print(f"[MCP] Executing run_job: id={id}", file=sys.stderr)
         return self.single_result(self.client.jobs.post_runs(id))
 
     @register_tool(
@@ -383,7 +369,6 @@ class CivisServer:
     )
     def get_job_run(self, job_id, run_id):
         """Get the details for a specific run of a Job"""
-        print(f"[MCP] Executing get_job_run: job_id={job_id}, run_id={run_id}", file=sys.stderr)
         return self.single_result(self.client.jobs.get_runs(job_id, run_id))
 
     # --- Report tools ---
@@ -410,7 +395,6 @@ class CivisServer:
         })
     def publish_html_report(self, body: str, name: str | None, description: str | None):
         "Post a report or application in Civis for sharing."
-        print(f"[MCP] Executing publish_html_report: name={name}, body_length={len(body)}", file=sys.stderr)
         post_result = self.client.reports.post(
             name=name,
             code_body=body,
@@ -426,7 +410,6 @@ class CivisServer:
 async def serve(api_key: str | None, schema: str | None, description: str | None):
     # Create server with description if provided
     server_name = "mcp-civis"
-    print(f"[MCP] Starting server: schema={schema}, has_description={description is not None}", file=sys.stderr)
 
     server = Server(server_name)
     client = civis.APIClient(
@@ -450,10 +433,7 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
     @server.list_tools()
     async def list_tools() -> list[Tool]:
         """List available civis tools."""
-        print("[MCP] Listing available tools", file=sys.stderr)
-        tools = civis_server.tools()
-        print(f"[MCP] Found {len(tools)} tools", file=sys.stderr)
-        return tools
+        return civis_server.tools()
 
     @server.call_tool()
     async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
@@ -465,12 +445,9 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
         })
 
         try:
-            result = getattr(civis_server, name)(**arguments)
-            print(f"[MCP] Tool call completed successfully: {name}", file=sys.stderr)
-            return result
+            return getattr(civis_server, name)(**arguments)
 
         except Exception as e:
-            print(f"[MCP] Error in tool call {name}: {e}", file=sys.stderr)
             print(f"Error processing mcp-server-civis query: {e}", file=sys.stderr)
             raise ValueError(f"Error processing mcp-server-civis query: {e}")
 
