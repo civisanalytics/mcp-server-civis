@@ -49,14 +49,16 @@ async def track_pendo_event(
         "properties": properties,
     }
 
+    print(f"[MCP Server] Event data: {json.dumps(event_data, indent=2)}", file=sys.stderr)
+
     if studio_env != "production":
         print(
             f"[MCP Server] Skipping pendo track event in non-production: {event_name}",
             file=sys.stderr
         )
-        print(f"Event data: {json.dumps(event_data)}", file=sys.stderr)
         return
 
+    print(f"[MCP Server] Sending pendo event to Pendo...", file=sys.stderr)
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.post(
@@ -69,5 +71,7 @@ async def track_pendo_event(
             )
             response.raise_for_status()
             print(f"[MCP Server] Pendo event sent successfully: {event_name}", file=sys.stderr)
+            print(f"[MCP Server] Response: {response.status_code}", file=sys.stderr)
     except Exception as error:
         print(f"[MCP Server] Error sending Pendo event: {error}", file=sys.stderr)
+        print(f"[MCP Server] Failed event data: {json.dumps(event_data, indent=2)}", file=sys.stderr)
