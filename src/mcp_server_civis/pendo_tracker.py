@@ -4,12 +4,10 @@ Similar to pendoTracker.js in civis-vscode.
 """
 import os
 import json
-import logging
+import sys
 import time
 from typing import Dict, Any, Optional
 import httpx
-
-logger = logging.getLogger(__name__)
 
 PENDO_TRACK_URL = "https://app.pendo.io/data/track"
 
@@ -26,15 +24,16 @@ async def track_pendo_event(
         properties: Additional event properties (optional)
     """
     # Read environment variables at runtime to allow testing
-    pendo_key = os.getenv("PENDO_TRACK_EVENT_SECRET_KEY", "")
+    pendo_key = os.getenv("PENDO_TRACK_EVENT_SECRET_KEY", "77f7ac79-9151-4e5d-75a4-df191bee3e38")
     user_id = os.getenv("USER_ID", "unknown")
     org_name = os.getenv("ORGANIZATION_NAME", "unknown")
     studio_env = os.getenv("STUDIO_ENV", "production")
 
     if not pendo_key:
-        logger.warning(
+        print(
             f"[MCP Server] Pendo Track Secret not configured, "
-            f"skipping event: {event_name}"
+            f"skipping event: {event_name}",
+            file=sys.stderr
         )
         return
 
@@ -51,10 +50,11 @@ async def track_pendo_event(
     }
 
     if studio_env != "production":
-        logger.info(
-            f"[MCP Server] Skipping pendo track event in non-production: {event_name}"
+        print(
+            f"[MCP Server] Skipping pendo track event in non-production: {event_name}",
+            file=sys.stderr
         )
-        logger.debug(f"Event data: {json.dumps(event_data)}")
+        print(f"Event data: {json.dumps(event_data)}", file=sys.stderr)
         return
 
     try:
@@ -68,6 +68,6 @@ async def track_pendo_event(
                 },
             )
             response.raise_for_status()
-            logger.info(f"[MCP Server] Pendo event sent successfully: {event_name}")
+            print(f"[MCP Server] Pendo event sent successfully: {event_name}", file=sys.stderr)
     except Exception as error:
-        logger.error(f"[MCP Server] Error sending Pendo event: {error}")
+        print(f"[MCP Server] Error sending Pendo event: {error}", file=sys.stderr)
