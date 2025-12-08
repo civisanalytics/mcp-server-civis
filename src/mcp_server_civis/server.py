@@ -438,7 +438,6 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
     @server.call_tool()
     async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
         """Handle tool calls for civis queries."""
-        print(f"[MCP] Tool call received: {name}", file=sys.stderr)
         # Track tool invocation (without prompt text or sensitive arguments)
         await track_pendo_event("tool_invoked", {
             "tool_name": name,
