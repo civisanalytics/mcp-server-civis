@@ -24,7 +24,7 @@ async def track_pendo_event(
         properties: Additional event properties (optional)
     """
     # Read environment variables at runtime to allow testing
-    pendo_key = os.getenv("PENDO_TRACK_EVENT_SECRET_KEY", "77f7ac79-9151-4e5d-75a4-df191bee3e38")
+    pendo_key = os.getenv("PENDO_TRACK_EVENT_SECRET_KEY", "")
     user_id = os.getenv("USER_ID", "unknown")
     org_name = os.getenv("ORGANIZATION_NAME", "unknown")
     studio_env = os.getenv("STUDIO_ENV", "production")
