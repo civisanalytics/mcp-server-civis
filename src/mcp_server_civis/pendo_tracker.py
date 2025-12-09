@@ -3,7 +3,6 @@ Pendo tracking for MCP server usage analytics.
 Similar to pendoTracker.js in civis-vscode.
 """
 import os
-import json
 import sys
 import time
 from typing import Dict, Any, Optional
