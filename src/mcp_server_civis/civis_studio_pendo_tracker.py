@@ -1,5 +1,5 @@
 """
-Pendo tracking for MCP server usage analytics.
+Pendo tracking for MCP server usage within Civis Studios.
 Similar to pendoTracker.js in civis-vscode.
 """
 import os
