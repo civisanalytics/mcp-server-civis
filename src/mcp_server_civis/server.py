@@ -8,7 +8,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-from .pendo_tracker import track_pendo_event
+from .civis_studio_pendo_tracker import track_pendo_event
 
 
 class CivisServer:

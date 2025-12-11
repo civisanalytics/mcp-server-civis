@@ -13,10 +13,14 @@ from unittest import mock
 async def test_track_pendo_event_without_key():
     """Test that tracking is skipped when API key is not configured."""
     # Import after patching env vars
-    from mcp_server_civis.pendo_tracker import track_pendo_event
+    from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
 
-    # Should not raise an exception
-    await track_pendo_event("test_event")
+    with mock.patch("httpx.AsyncClient") as mock_client_class:
+        # Should not raise an exception
+        await track_pendo_event("test_event")
+        
+        # Verify HTTP client was never created
+        mock_client_class.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -29,10 +33,14 @@ async def test_track_pendo_event_without_key():
 async def test_track_pendo_event_in_dev():
     """Test that tracking is skipped in development environment."""
     # Import after patching env vars
-    from mcp_server_civis.pendo_tracker import track_pendo_event
+    from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
 
-    # Should not make HTTP request in dev
-    await track_pendo_event("test_event", {"prop": "value"})
+    with mock.patch("httpx.AsyncClient") as mock_client_class:
+        # Should not make HTTP request in dev
+        await track_pendo_event("test_event", {"prop": "value"})
+        
+        # Verify HTTP client was never created in non-production
+        mock_client_class.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -45,7 +53,7 @@ async def test_track_pendo_event_in_dev():
 async def test_track_pendo_event_in_production():
     """Test that tracking sends HTTP request in production."""
     # Import after patching env vars
-    from mcp_server_civis.pendo_tracker import track_pendo_event
+    from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
 
     with mock.patch("httpx.AsyncClient") as mock_client_class:
         # Setup mock
@@ -89,7 +97,7 @@ async def test_track_pendo_event_in_production():
 async def test_track_pendo_event_with_error():
     """Test that tracking handles HTTP errors gracefully."""
     # Import after patching env vars
-    from mcp_server_civis.pendo_tracker import track_pendo_event
+    from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
 
     with mock.patch("httpx.AsyncClient") as mock_client_class:
         # Setup mock to raise error
