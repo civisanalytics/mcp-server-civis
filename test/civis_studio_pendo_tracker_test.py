@@ -28,7 +28,7 @@ async def test_track_pendo_event_without_key():
     with mock.patch("httpx.AsyncClient") as mock_client_class:
         # Should not raise an exception
         await track_pendo_event("test_event")
-        
+
         # Verify HTTP client was never created
         mock_client_class.assert_not_called()
 
@@ -43,7 +43,7 @@ async def test_track_pendo_event_in_dev():
     with mock.patch("httpx.AsyncClient") as mock_client_class:
         # Should not make HTTP request in dev
         await track_pendo_event("test_event", {"prop": "value"})
-        
+
         # Verify HTTP client was never created in non-production
         mock_client_class.assert_not_called()
 
@@ -108,9 +108,10 @@ async def test_track_pendo_event_with_error():
         with mock.patch("sys.stderr") as mock_stderr:
             # Should not raise exception, just log error
             await track_pendo_event("test_event")
-            
+
             # Verify error was logged
             mock_stderr.write.assert_called()
-            logged_output = "".join([call[0][0] for call in mock_stderr.write.call_args_list])
+            calls = mock_stderr.write.call_args_list
+            logged_output = "".join([call[0][0] for call in calls])
             assert "Error sending Pendo event" in logged_output
             assert "Network error" in logged_output
