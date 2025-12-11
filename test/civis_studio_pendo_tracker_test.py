@@ -104,5 +104,13 @@ async def test_track_pendo_event_with_error():
         )
         mock_client_class.return_value = mock_client
 
-        # Should not raise exception, just log error
-        await track_pendo_event("test_event")
+        # Capture stderr to verify error logging
+        with mock.patch("sys.stderr") as mock_stderr:
+            # Should not raise exception, just log error
+            await track_pendo_event("test_event")
+            
+            # Verify error was logged
+            mock_stderr.write.assert_called()
+            logged_output = "".join([call[0][0] for call in mock_stderr.write.call_args_list])
+            assert "Error sending Pendo event" in logged_output
+            assert "Network error" in logged_output
