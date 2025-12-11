@@ -23,10 +23,17 @@ async def track_pendo_event(
         properties: Additional event properties (optional)
     """
     # Read environment variables at runtime to allow testing.
+    studio_env = os.getenv("STUDIO_ENV", "production")
     pendo_key = os.getenv("PENDO_TRACK_EVENT_SECRET_KEY", "")
     user_id = os.getenv("USER_ID", "unknown")
     org_name = os.getenv("ORGANIZATION_NAME", "unknown")
-    studio_env = os.getenv("STUDIO_ENV", "production")
+
+    if studio_env != "production":
+        print(
+            f"[MCP Server] Skipping pendo track event in non-production: {event_name}",
+            file=sys.stderr
+        )
+        return
 
     if not pendo_key:
         print(
@@ -47,13 +54,6 @@ async def track_pendo_event(
         "timestamp": int(time.time() * 1000),  # milliseconds since epoch
         "properties": properties,
     }
-
-    if studio_env != "production":
-        print(
-            f"[MCP Server] Skipping pendo track event in non-production: {event_name}",
-            file=sys.stderr
-        )
-        return
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
