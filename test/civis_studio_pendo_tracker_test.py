@@ -3,13 +3,23 @@ import pytest
 from unittest import mock
 
 
-@pytest.mark.asyncio
-@mock.patch.dict("os.environ", {
-    "PENDO_TRACK_EVENT_SECRET_KEY": "",
+# Environment configurations for testing
+PROD_ENV = {
+    "PENDO_TRACK_EVENT_SECRET_KEY": "test-key",
     "USER_ID": "test-user",
     "ORGANIZATION_NAME": "test-org",
     "STUDIO_ENV": "production",
-})
+}
+
+DEV_ENV = PROD_ENV.copy()
+DEV_ENV["STUDIO_ENV"] = "development"
+
+NO_KEY_ENV = PROD_ENV.copy()
+NO_KEY_ENV["PENDO_TRACK_EVENT_SECRET_KEY"] = ""
+
+
+@pytest.mark.asyncio
+@mock.patch.dict("os.environ", NO_KEY_ENV)
 async def test_track_pendo_event_without_key():
     """Test that tracking is skipped when API key is not configured."""
     # Import after patching env vars
@@ -24,12 +34,7 @@ async def test_track_pendo_event_without_key():
 
 
 @pytest.mark.asyncio
-@mock.patch.dict("os.environ", {
-    "PENDO_TRACK_EVENT_SECRET_KEY": "test-key",
-    "USER_ID": "test-user",
-    "ORGANIZATION_NAME": "test-org",
-    "STUDIO_ENV": "development",
-})
+@mock.patch.dict("os.environ", DEV_ENV)
 async def test_track_pendo_event_in_dev():
     """Test that tracking is skipped in development environment."""
     # Import after patching env vars
@@ -44,12 +49,7 @@ async def test_track_pendo_event_in_dev():
 
 
 @pytest.mark.asyncio
-@mock.patch.dict("os.environ", {
-    "PENDO_TRACK_EVENT_SECRET_KEY": "test-key",
-    "USER_ID": "test-user",
-    "ORGANIZATION_NAME": "test-org",
-    "STUDIO_ENV": "production",
-})
+@mock.patch.dict("os.environ", PROD_ENV)
 async def test_track_pendo_event_in_production():
     """Test that tracking sends HTTP request in production."""
     # Import after patching env vars
@@ -88,12 +88,7 @@ async def test_track_pendo_event_in_production():
 
 
 @pytest.mark.asyncio
-@mock.patch.dict("os.environ", {
-    "PENDO_TRACK_EVENT_SECRET_KEY": "test-key",
-    "USER_ID": "test-user",
-    "ORGANIZATION_NAME": "test-org",
-    "STUDIO_ENV": "production",
-})
+@mock.patch.dict("os.environ", PROD_ENV)
 async def test_track_pendo_event_with_error():
     """Test that tracking handles HTTP errors gracefully."""
     # Import after patching env vars
