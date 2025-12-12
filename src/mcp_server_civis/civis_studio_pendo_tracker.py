@@ -11,6 +11,28 @@ import httpx
 PENDO_TRACK_URL = "https://app.pendo.io/data/track"
 
 
+def log_pendo_configuration() -> None:
+    """
+    Log the Pendo configuration status once at startup.
+    This helps users understand if Pendo tracking is enabled.
+    """
+    studio_env = os.getenv("STUDIO_ENV", "production")
+    pendo_key = os.getenv("PENDO_TRACK_EVENT_SECRET_KEY", "")
+
+    if not pendo_key:
+        print(
+            "[MCP Server] not configured, "
+            "skipping event",
+            file=sys.stderr
+        )
+    elif studio_env != "production":
+        print(
+            f"[MCP Server] Pendo tracking disabled: "
+            f"STUDIO_ENV is '{studio_env}' (not production)",
+            file=sys.stderr
+        )
+
+
 async def track_pendo_event(
     event_name: str,
     properties: Optional[Dict[str, Any]] = None
@@ -28,19 +50,8 @@ async def track_pendo_event(
     user_id = os.getenv("USER_ID", "unknown")
     org_name = os.getenv("ORGANIZATION_NAME", "unknown")
 
-    if studio_env != "production":
-        print(
-            f"[MCP Server] Skipping pendo track event in non-production: {event_name}",
-            file=sys.stderr
-        )
-        return
-
-    if not pendo_key:
-        print(
-            f"[MCP Server] Pendo Track Secret not configured, "
-            f"skipping event: {event_name}",
-            file=sys.stderr
-        )
+    # Silently skip if not configured properly
+    if studio_env != "production" or not pendo_key:
         return
 
     if properties is None:

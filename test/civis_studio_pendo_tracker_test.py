@@ -18,6 +18,54 @@ NO_KEY_ENV = PROD_ENV.copy()
 NO_KEY_ENV["PENDO_TRACK_EVENT_SECRET_KEY"] = ""
 
 
+@mock.patch.dict("os.environ", PROD_ENV)
+def test_log_pendo_configuration_enabled():
+    """Test that log_pendo_configuration doesn't log when enabled."""
+    from mcp_server_civis.civis_studio_pendo_tracker import (
+        log_pendo_configuration
+    )
+
+    with mock.patch("sys.stderr") as mock_stderr:
+        log_pendo_configuration()
+
+        # When configured properly, no log should be printed
+        mock_stderr.write.assert_not_called()
+
+
+@mock.patch.dict("os.environ", NO_KEY_ENV)
+def test_log_pendo_configuration_no_key():
+    """Test that log_pendo_configuration logs when key missing."""
+    from mcp_server_civis.civis_studio_pendo_tracker import (
+        log_pendo_configuration
+    )
+
+    with mock.patch("sys.stderr") as mock_stderr:
+        log_pendo_configuration()
+
+        mock_stderr.write.assert_called()
+        calls = mock_stderr.write.call_args_list
+        logged_output = "".join([call[0][0] for call in calls])
+        assert "not configured" in logged_output
+        assert "skipping event" in logged_output
+
+
+@mock.patch.dict("os.environ", DEV_ENV)
+def test_log_pendo_configuration_non_prod():
+    """Test that log_pendo_configuration logs when not production."""
+    from mcp_server_civis.civis_studio_pendo_tracker import (
+        log_pendo_configuration
+    )
+
+    with mock.patch("sys.stderr") as mock_stderr:
+        log_pendo_configuration()
+
+        mock_stderr.write.assert_called()
+        calls = mock_stderr.write.call_args_list
+        logged_output = "".join([call[0][0] for call in calls])
+        assert "Pendo tracking disabled" in logged_output
+        assert "development" in logged_output
+
+
 @pytest.mark.asyncio
 @mock.patch.dict("os.environ", NO_KEY_ENV)
 async def test_track_pendo_event_without_key():

@@ -8,7 +8,10 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-from .civis_studio_pendo_tracker import track_pendo_event
+from .civis_studio_pendo_tracker import (
+    track_pendo_event,
+    log_pendo_configuration,
+)
 
 
 class CivisServer:
@@ -422,6 +425,9 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
     civis_server = CivisServer(
         client, default_credential, default_database, schema, description
     )
+
+    # Log Pendo configuration status once at startup
+    log_pendo_configuration()
 
     # Track MCP session start
     await track_pendo_event("session_started", {
