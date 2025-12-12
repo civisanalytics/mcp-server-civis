@@ -74,11 +74,15 @@ async def test_track_pendo_event_without_key():
     from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
 
     with mock.patch("httpx.AsyncClient") as mock_client_class:
-        # Should not raise an exception
-        await track_pendo_event("test_event")
+        with mock.patch("sys.stderr") as mock_stderr:
+            # Should not raise an exception
+            await track_pendo_event("test_event")
 
-        # Verify HTTP client was never created
-        mock_client_class.assert_not_called()
+            # Verify HTTP client was never created
+            mock_client_class.assert_not_called()
+
+            # Verify no logging occurred (silently skipped)
+            mock_stderr.write.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -89,11 +93,15 @@ async def test_track_pendo_event_in_dev():
     from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
 
     with mock.patch("httpx.AsyncClient") as mock_client_class:
-        # Should not make HTTP request in dev
-        await track_pendo_event("test_event", {"prop": "value"})
+        with mock.patch("sys.stderr") as mock_stderr:
+            # Should not make HTTP request in dev
+            await track_pendo_event("test_event", {"prop": "value"})
 
-        # Verify HTTP client was never created in non-production
-        mock_client_class.assert_not_called()
+            # Verify HTTP client was never created in non-production
+            mock_client_class.assert_not_called()
+
+            # Verify no logging occurred (silently skipped)
+            mock_stderr.write.assert_not_called()
 
 
 @pytest.mark.asyncio
