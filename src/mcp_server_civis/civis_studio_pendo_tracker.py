@@ -21,8 +21,8 @@ def log_pendo_configuration() -> None:
 
     if not pendo_key:
         print(
-            "[MCP Server] not configured, "
-            "skipping event",
+            "[MCP Server] Pendo not configured, "
+            "skipping event tracking",
             file=sys.stderr
         )
     elif studio_env != "production":
