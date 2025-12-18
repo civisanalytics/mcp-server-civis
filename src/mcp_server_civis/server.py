@@ -6,7 +6,7 @@ import mcp_server_civis
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import Tool, TextContent
+from mcp.types import Tool, TextContent, Prompt, PromptMessage, GetPromptResult
 
 
 class CivisServer:
@@ -61,6 +61,66 @@ class CivisServer:
                 )
                 tool_list.append(tool)
         return tool_list
+
+    def prompts(self) -> List[Prompt]:
+        """Generates a list of available prompts."""
+        return [
+            Prompt(
+                name="explore",
+                description="Begin exploratory data analysis on Civis data",
+                arguments=[],
+            )
+        ]
+
+    def get_prompt(self, name: str, arguments: Dict[str, str]) -> GetPromptResult:
+        """Gets a specific prompt by name."""
+        if name == "explore":
+            prompt_text = """You are beginning an exploratory data analysis (EDA) session using the Civis Analytics platform.
+
+**Important Guidelines:**
+
+1. **Data Access:** Use the Civis client tools to access and query data. You can:
+   - Use `list_tables` to discover available tables
+   - Use `get_table` to inspect table schemas and sample data
+   - Use `run_query` to execute SELECT queries for analysis
+   - Use `pull_data_list` for larger result sets
+
+2. **Execute Analysis:** Run your analysis steps autonomously. Execute queries and inspect results to understand the data.
+
+3. **Read-Only Operations:** NEVER write SQL statements that modify data. Avoid:
+   - INSERT, UPDATE, DELETE statements
+   - DROP, TRUNCATE, ALTER statements
+   - CREATE statements
+   - Any other data-modifying operations
+   Only use SELECT queries for exploration.
+
+4. **Typical EDA Workflow:**
+   - Discover available tables and their schemas
+   - Examine data types, column names, and sample values
+   - Check data quality (nulls, duplicates, outliers)
+   - Calculate summary statistics
+   - Identify patterns, distributions, and relationships
+   - Document interesting findings
+
+5. **Best Practices:**
+   - Start with small result sets to understand the data structure
+   - Use aggregations and GROUP BY for large tables
+   - Look for data quality issues early
+   - Consider temporal patterns if date/time columns exist
+   - Think about relationships between tables
+
+Begin by discovering what tables are available and understanding their structure."""
+
+            return GetPromptResult(
+                messages=[
+                    PromptMessage(
+                        role="user",
+                        content=TextContent(type="text", text=prompt_text),
+                    )
+                ]
+            )
+        else:
+            raise ValueError(f"Unknown prompt: {name}")
 
     def list_result(self, result, last_cursor=None):
         parsed_result = [r.json() if hasattr(r, "json") else r for r in result]
@@ -436,6 +496,20 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
         except Exception as e:
             print(f"Error processing mcp-server-civis query: {e}", file=sys.stderr)
             raise ValueError(f"Error processing mcp-server-civis query: {e}")
+
+    @server.list_prompts()
+    async def list_prompts() -> list[Prompt]:
+        """List available civis prompts."""
+        return civis_server.prompts()
+
+    @server.get_prompt()
+    async def get_prompt(name: str, arguments: dict | None = None) -> GetPromptResult:
+        """Get a specific prompt."""
+        try:
+            return civis_server.get_prompt(name, arguments or {})
+        except Exception as e:
+            print(f"Error getting prompt: {e}", file=sys.stderr)
+            raise ValueError(f"Error getting prompt: {e}")
 
     options = server.create_initialization_options()
     async with stdio_server() as (read_stream, write_stream):
