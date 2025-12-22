@@ -1,0 +1,173 @@
+"""Tests for pendo_tracker module."""
+import pytest
+from unittest import mock
+
+
+# Environment configurations for testing
+PROD_ENV = {
+    "PENDO_TRACK_EVENT_SECRET_KEY": "test-key",
+    "USER_ID": "test-user",
+    "ORGANIZATION_NAME": "test-org",
+    "STUDIO_ENV": "production",
+}
+
+DEV_ENV = PROD_ENV.copy()
+DEV_ENV["STUDIO_ENV"] = "development"
+
+NO_KEY_ENV = PROD_ENV.copy()
+NO_KEY_ENV["PENDO_TRACK_EVENT_SECRET_KEY"] = ""
+
+
+@mock.patch.dict("os.environ", PROD_ENV)
+def test_log_pendo_configuration_enabled():
+    """Test that log_pendo_configuration doesn't log when enabled."""
+    from mcp_server_civis.civis_studio_pendo_tracker import (
+        log_pendo_configuration
+    )
+
+    with mock.patch("sys.stderr") as mock_stderr:
+        log_pendo_configuration()
+
+        # When configured properly, no log should be printed
+        mock_stderr.write.assert_not_called()
+
+
+@mock.patch.dict("os.environ", NO_KEY_ENV)
+def test_log_pendo_configuration_no_key():
+    """Test that log_pendo_configuration logs when key missing."""
+    from mcp_server_civis.civis_studio_pendo_tracker import (
+        log_pendo_configuration
+    )
+
+    with mock.patch("sys.stderr") as mock_stderr:
+        log_pendo_configuration()
+
+        mock_stderr.write.assert_called()
+        calls = mock_stderr.write.call_args_list
+        logged_output = "".join([call[0][0] for call in calls])
+        assert "not configured" in logged_output
+        assert "skipping event" in logged_output
+
+
+@mock.patch.dict("os.environ", DEV_ENV)
+def test_log_pendo_configuration_non_prod():
+    """Test that log_pendo_configuration logs when not production."""
+    from mcp_server_civis.civis_studio_pendo_tracker import (
+        log_pendo_configuration
+    )
+
+    with mock.patch("sys.stderr") as mock_stderr:
+        log_pendo_configuration()
+
+        mock_stderr.write.assert_called()
+        calls = mock_stderr.write.call_args_list
+        logged_output = "".join([call[0][0] for call in calls])
+        assert "Pendo tracking disabled" in logged_output
+        assert "development" in logged_output
+
+
+@pytest.mark.asyncio
+@mock.patch.dict("os.environ", NO_KEY_ENV)
+async def test_track_pendo_event_without_key():
+    """Test that tracking is skipped when API key is not configured."""
+    # Import after patching env vars
+    from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
+
+    with mock.patch("httpx.AsyncClient") as mock_client_class:
+        with mock.patch("sys.stderr") as mock_stderr:
+            # Should not raise an exception
+            await track_pendo_event("test_event")
+
+            # Verify HTTP client was never created
+            mock_client_class.assert_not_called()
+
+            # Verify no logging occurred (silently skipped)
+            mock_stderr.write.assert_not_called()
+
+
+@pytest.mark.asyncio
+@mock.patch.dict("os.environ", DEV_ENV)
+async def test_track_pendo_event_in_dev():
+    """Test that tracking is skipped in development environment."""
+    # Import after patching env vars
+    from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
+
+    with mock.patch("httpx.AsyncClient") as mock_client_class:
+        with mock.patch("sys.stderr") as mock_stderr:
+            # Should not make HTTP request in dev
+            await track_pendo_event("test_event", {"prop": "value"})
+
+            # Verify HTTP client was never created in non-production
+            mock_client_class.assert_not_called()
+
+            # Verify no logging occurred (silently skipped)
+            mock_stderr.write.assert_not_called()
+
+
+@pytest.mark.asyncio
+@mock.patch.dict("os.environ", PROD_ENV)
+async def test_track_pendo_event_in_production():
+    """Test that tracking sends HTTP request in production."""
+    # Import after patching env vars
+    from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
+
+    with mock.patch("httpx.AsyncClient") as mock_client_class:
+        # Setup mock
+        mock_client = mock.MagicMock()
+        mock_response = mock.MagicMock()
+        mock_response.raise_for_status = mock.MagicMock()
+
+        # Setup async context manager
+        mock_client.__aenter__ = mock.AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = mock.AsyncMock(return_value=None)
+        mock_client.post = mock.AsyncMock(return_value=mock_response)
+        mock_client_class.return_value = mock_client
+
+        await track_pendo_event("test_event", {"tool_name": "run_query"})
+
+        # Verify HTTP request was made
+        assert mock_client.post.called
+        call_kwargs = mock_client.post.call_args.kwargs
+
+        # Check the event data structure
+        event_json = call_kwargs['json']
+        assert event_json['type'] == 'track'
+        assert event_json['event'] == 'Civis Studio | MCP | test_event'
+        assert event_json['visitorId'] == 'test-user'
+        assert event_json['accountId'] == 'test-org'
+        assert event_json['properties']['tool_name'] == 'run_query'
+
+        # Check headers
+        headers = call_kwargs['headers']
+        assert headers['Content-Type'] == 'application/json'
+        assert headers['x-pendo-integration-key'] == 'test-key'
+
+
+@pytest.mark.asyncio
+@mock.patch.dict("os.environ", PROD_ENV)
+async def test_track_pendo_event_with_error():
+    """Test that tracking handles HTTP errors gracefully."""
+    # Import after patching env vars
+    from mcp_server_civis.civis_studio_pendo_tracker import track_pendo_event
+
+    with mock.patch("httpx.AsyncClient") as mock_client_class:
+        # Setup mock to raise error
+        mock_client = mock.MagicMock()
+        mock_client.__aenter__ = mock.AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = mock.AsyncMock(return_value=None)
+        mock_client.post = mock.AsyncMock(
+            side_effect=Exception("Network error")
+        )
+        mock_client_class.return_value = mock_client
+
+        # Capture stderr to verify error logging
+        with mock.patch("sys.stderr") as mock_stderr:
+            # Should not raise exception, just log error
+            await track_pendo_event("test_event")
+
+            # Verify error was logged
+            mock_stderr.write.assert_called()
+            calls = mock_stderr.write.call_args_list
+            logged_output = "".join([call[0][0] for call in calls])
+            assert "Error sending Pendo event" in logged_output
+            assert "Network error" in logged_output

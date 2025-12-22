@@ -8,6 +8,11 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
+from .civis_studio_pendo_tracker import (
+    track_pendo_event,
+    log_pendo_configuration,
+)
+
 
 class CivisServer:
     def __init__(
@@ -421,6 +426,15 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
         client, default_credential, default_database, schema, description
     )
 
+    # Log Pendo configuration status once at startup
+    log_pendo_configuration()
+
+    # Track MCP session start
+    await track_pendo_event("session_started", {
+        "schema": schema if schema else "none",
+        "has_description": description is not None,
+    })
+
     # TODO: Convert operations without side effects to resources
     @server.list_tools()
     async def list_tools() -> list[Tool]:
@@ -430,6 +444,11 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
     @server.call_tool()
     async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
         """Handle tool calls for civis queries."""
+        # Track tool invocation (without prompt text or sensitive arguments)
+        await track_pendo_event("tool_invoked", {
+            "tool_name": name,
+        })
+
         try:
             return getattr(civis_server, name)(**arguments)
 
