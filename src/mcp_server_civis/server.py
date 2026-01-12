@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import civis
 from typing import Sequence, Dict, Any, List, Callable
@@ -16,7 +18,11 @@ from .civis_studio_pendo_tracker import (
 
 class CivisServer:
     def __init__(
-        self, client, default_credential, default_database, schema, description
+        self, client: civis.APIClient,
+        default_credential: int,
+        default_database: int,
+        schema,
+        description,
     ):
         self.client = client
         self.default_credential = default_credential
@@ -87,6 +93,18 @@ class CivisServer:
         """Get my civis user information"""
         return self.single_result(self.client.users.list_me())
 
+    @register_tool(input_schema={"type": "object", "properties": {}})
+    def get_databases(self):
+        """Get the list of databases available to the user"""
+        return self.list_result(self.client.databases.list())
+
+    @register_tool(input_schema={"type": "object", "properties": {}})
+    def get_database_credentials(self):
+        """Get the list of database credentials available to the user"""
+        return self.list_result(
+            self.client.credentials.list(type="Database", iterator=True)
+        )
+
     # --- Table and query tools ---
     @register_tool(
         input_schema={
@@ -101,13 +119,20 @@ class CivisServer:
             },
         }
     )
-    def list_tables(self, schema=None, table_tag_ids=None):
+    def list_tables(
+        self,
+        schema=None,
+        table_tag_ids=None,
+        database_id=None,
+        credential_id=None,
+    ):
         """Get the tables in a database"""
         # Use the server schema if provided, otherwise use the parameter
         return self.list_result(
             self.client.tables.list(
                 schema=self.schema or schema,
-                database_id=self.default_database,
+                database_id=database_id or self.default_database,
+                credential_id=credential_id or self.default_credential,
                 table_tag_ids=table_tag_ids,
                 iterator=True,
             )
@@ -149,7 +174,7 @@ class CivisServer:
             "required": ["query"],
         }
     )
-    def run_query(self, query, resultRows=10):
+    def run_query(self, query, resultRows=10, database_id=None, credential_id=None):
         """Run a query with the user's default credentials and database. Returns up to
         1000 rows, depending on the resultRows parameter. Best used for small tables,
         aggregates or samples."""
@@ -161,7 +186,8 @@ class CivisServer:
         return self.single_result(
             civis.io.query_civis(
                 query,
-                self.default_database,
+                database_id or self.default_database,
+                credential_id=credential_id or self.default_credential,
                 client=self.client,
                 preview_rows=resultRows,
             ).result()
@@ -176,7 +202,7 @@ class CivisServer:
             "required": ["query"],
         }
     )
-    def pull_data_list(self, query, resultRows=10):
+    def pull_data_list(self, query, database_id=None, credential_id=None):
         """Run a query with the user's default credentials and database. Returns a URL
         to download the data from. May be used for exporting larger results."""
         if self.schema:
@@ -185,7 +211,8 @@ class CivisServer:
             query = "BEGIN READ ONLY; " + query
         sql_result = civis.io.export_to_civis_file(
             query,
-            self.default_database,
+            database_id or self.default_database,
+            credential_id=credential_id or self.default_credential,
             job_name="MCP Export",
             client=self.client,
             hidden=True,
