@@ -116,6 +116,20 @@ class CivisServer:
                     "items": {"type": "number"},
                     "description": "a list of table tags IDs to filter by",
                 },
+                "database_id": {
+                    "type": "number",
+                    "description": (
+                        "The ID of the database to list tables from. "
+                        "If not provided, the default database will be used."
+                    ),
+                },
+                "credential_id": {
+                    "type": "number",
+                    "description": (
+                        "The ID of the credential to use. "
+                        "If not provided, the default credential will be used."
+                    ),
+                },
             },
         }
     )
@@ -170,14 +184,27 @@ class CivisServer:
                         """,
                     "default": 10,
                 },
+                "database_id": {
+                    "type": "number",
+                    "description": (
+                        "The ID of the database to run the query against. "
+                        "If not provided, the default database will be used."
+                    ),
+                },
+                "credential_id": {
+                    "type": "number",
+                    "description": (
+                        "The ID of the credential to use for the query. "
+                        "If not provided, the default credential will be used."
+                    ),
+                },
             },
             "required": ["query"],
         }
     )
     def run_query(self, query, resultRows=10, database_id=None, credential_id=None):
-        """Run a query with the user's default credentials and database. Returns up to
-        1000 rows, depending on the resultRows parameter. Best used for small tables,
-        aggregates or samples."""
+        """Run a query. Returns up to 1000 rows, depending on the resultRows parameter.
+        Best used for small tables, aggregates or samples."""
         if self.schema:
             if self.schema not in query:
                 raise ValueError("Specified schema was not in query")
@@ -198,13 +225,27 @@ class CivisServer:
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "SQL query to execute"},
+                "database_id": {
+                    "type": "number",
+                    "description": (
+                        "The ID of the database to run the query against. "
+                        "If not provided, the default database will be used."
+                    ),
+                },
+                "credential_id": {
+                    "type": "number",
+                    "description": (
+                        "The ID of the credential to use for the query. "
+                        "If not provided, the default credential will be used."
+                    ),
+                },
             },
             "required": ["query"],
         }
     )
     def pull_data_list(self, query, database_id=None, credential_id=None):
-        """Run a query with the user's default credentials and database. Returns a URL
-        to download the data from. May be used for exporting larger results."""
+        """Run a query. Returns a URL to download the data from.
+        May be used for exporting larger results."""
         if self.schema:
             if self.schema not in query:
                 raise ValueError("Specified schema was not in query")

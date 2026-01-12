@@ -102,7 +102,7 @@ def test_list_tables(m_civis):
     result = server.list_tables()[0].text
     assert result == json.dumps(mock_tables)
     civis_mock.tables.list.assert_called_once_with(
-        schema=None, database_id=5, table_tag_ids=None, iterator=True
+        schema=None, database_id=5, credential_id=3, table_tag_ids=None, iterator=True
     )
 
 
@@ -114,10 +114,16 @@ def test_list_tables_with_params(m_civis):
     m_civis.APIClient.return_value = civis_mock
 
     server = default_server(civis_mock)
-    result = server.list_tables(schema="test_schema", table_tag_ids=[1, 2])[0].text
+    result = server.list_tables(
+        schema="test_schema", table_tag_ids=[1, 2], database_id=123, credential_id=456
+    )[0].text
     assert result == json.dumps(mock_tables)
     civis_mock.tables.list.assert_called_once_with(
-        schema="test_schema", database_id=5, table_tag_ids=[1, 2], iterator=True
+        schema="test_schema",
+        database_id=123,
+        credential_id=456,
+        table_tag_ids=[1, 2],
+        iterator=True,
     )
 
 
@@ -163,12 +169,12 @@ def test_run_query(m_civis):
     expected_result = {"data": [["row1"], ["row2"]], "columns": ["col1"]}
     assert result == json.dumps(expected_result)
     m_civis.io.query_civis.assert_called_once_with(
-        "SELECT * FROM test", 5, client=civis_mock, preview_rows=10
+        "SELECT * FROM test", 5, client=civis_mock, preview_rows=10, credential_id=3
     )
 
 
 @mock.patch.object(civis_server, "civis")
-def test_run_query_with_result_rows(m_civis):
+def test_run_query_with_params(m_civis):
     civis_mock = basic_client_mock()
     mock_query_result = mock.Mock()
     mock_query_result.result.return_value = {"data": [["row1"]], "columns": ["col1"]}
@@ -176,11 +182,13 @@ def test_run_query_with_result_rows(m_civis):
     m_civis.APIClient.return_value = civis_mock
 
     server = default_server(civis_mock)
-    result = server.run_query(query="SELECT * FROM test", resultRows=5)[0].text
+    result = server.run_query(
+        query="SELECT * FROM test", resultRows=5, database_id=123, credential_id=456
+    )[0].text
     expected_result = {"data": [["row1"]], "columns": ["col1"]}
     assert result == json.dumps(expected_result)
     m_civis.io.query_civis.assert_called_once_with(
-        "SELECT * FROM test", 5, client=civis_mock, preview_rows=5
+        "SELECT * FROM test", 123, client=civis_mock, preview_rows=5, credential_id=456
     )
 
 
@@ -211,6 +219,7 @@ def test_pull_data_list(m_civis):
         5,
         job_name="MCP Export",
         client=civis_mock,
+        credential_id=3,
         hidden=True,
     )
 
@@ -443,7 +452,8 @@ def test_run_query_with_schema_adds_readonly_transaction(m_civis):
         "BEGIN READ ONLY; SELECT * FROM test_schema.test_table",
         5,
         client=civis_mock,
-        preview_rows=10
+        preview_rows=10,
+        credential_id=3,
     )
 
 
@@ -477,6 +487,7 @@ def test_pull_data_list_with_schema_adds_readonly_transaction(m_civis):
         5,
         job_name="MCP Export",
         client=civis_mock,
+        credential_id=3,
         hidden=True
     )
 
