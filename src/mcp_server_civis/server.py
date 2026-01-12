@@ -21,8 +21,8 @@ class CivisServer:
         self, client: civis.APIClient,
         default_credential: int,
         default_database: int,
-        schema,
-        description,
+        schema: str | None,
+        description: str | None,
     ):
         self.client = client
         self.default_credential = default_credential
