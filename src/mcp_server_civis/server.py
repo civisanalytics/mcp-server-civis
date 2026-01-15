@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 import civis
-from typing import Sequence, Dict, Any, List, Callable
 import sys
 import mcp_server_civis
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -17,6 +18,32 @@ from .civis_studio_pendo_tracker import (
 
 
 class CivisServer:
+    _DATABASE_ID_PROPERTY = {
+        "type": "number",
+        "description": (
+            "The ID of the database to list tables from. "
+            "To see available databases for a given user, use "
+            "`client.databases.list()` in the Civis Python client, "
+            "or point your web browser to "
+            "https://api.civisanalytics.com/databases after logging on to "
+            "Civis Platform as the desired user. "
+            "If not provided, the default database will be used."
+        ),
+    }
+
+    _CREDENTIAL_ID_PROPERTY = {
+        "type": "number",
+        "description": (
+            "The ID of the credential to use. "
+            "To see available credentials for the given user, use "
+            "`client.credentials.list(type=\"Database\")` in the Civis Python client, "
+            "or point your web browser to "
+            "https://api.civisanalytics.com/credentials?type=Database "
+            "after logging on to Civis Platform as the desired user. "
+            "If not provided, the default credential will be used."
+        ),
+    }
+
     def __init__(
         self, client: civis.APIClient,
         default_credential: int,
@@ -31,7 +58,7 @@ class CivisServer:
         self.description = description
 
     @staticmethod
-    def register_tool(input_schema: Dict[str, Any]):
+    def register_tool(input_schema: dict[str, Any]):
         """
         Decorator that sets the input_schema as an attribute on the function.
         This is later used by the .tools method to generate the tool list.
@@ -47,7 +74,7 @@ class CivisServer:
 
         return decorator
 
-    def tools(self) -> List[Tool]:
+    def tools(self) -> list[Tool]:
         """Generates a list of available tools based on registered methods,
         their docstrings, and the input schema."""
         tool_list = []
@@ -93,18 +120,6 @@ class CivisServer:
         """Get my civis user information"""
         return self.single_result(self.client.users.list_me())
 
-    @register_tool(input_schema={"type": "object", "properties": {}})
-    def get_databases(self):
-        """Get the list of databases available to the user"""
-        return self.list_result(self.client.databases.list())
-
-    @register_tool(input_schema={"type": "object", "properties": {}})
-    def get_database_credentials(self):
-        """Get the list of database credentials available to the user"""
-        return self.list_result(
-            self.client.credentials.list(type="Database", iterator=True)
-        )
-
     # --- Table and query tools ---
     @register_tool(
         input_schema={
@@ -116,20 +131,8 @@ class CivisServer:
                     "items": {"type": "number"},
                     "description": "a list of table tags IDs to filter by",
                 },
-                "database_id": {
-                    "type": "number",
-                    "description": (
-                        "The ID of the database to list tables from. "
-                        "If not provided, the default database will be used."
-                    ),
-                },
-                "credential_id": {
-                    "type": "number",
-                    "description": (
-                        "The ID of the credential to use. "
-                        "If not provided, the default credential will be used."
-                    ),
-                },
+                "database_id": _DATABASE_ID_PROPERTY,
+                "credential_id": _CREDENTIAL_ID_PROPERTY,
             },
         }
     )
@@ -184,20 +187,8 @@ class CivisServer:
                         """,
                     "default": 10,
                 },
-                "database_id": {
-                    "type": "number",
-                    "description": (
-                        "The ID of the database to run the query against. "
-                        "If not provided, the default database will be used."
-                    ),
-                },
-                "credential_id": {
-                    "type": "number",
-                    "description": (
-                        "The ID of the credential to use for the query. "
-                        "If not provided, the default credential will be used."
-                    ),
-                },
+                "database_id": _DATABASE_ID_PROPERTY,
+                "credential_id": _CREDENTIAL_ID_PROPERTY,
             },
             "required": ["query"],
         }
@@ -225,20 +216,8 @@ class CivisServer:
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "SQL query to execute"},
-                "database_id": {
-                    "type": "number",
-                    "description": (
-                        "The ID of the database to run the query against. "
-                        "If not provided, the default database will be used."
-                    ),
-                },
-                "credential_id": {
-                    "type": "number",
-                    "description": (
-                        "The ID of the credential to use for the query. "
-                        "If not provided, the default credential will be used."
-                    ),
-                },
+                "database_id": _DATABASE_ID_PROPERTY,
+                "credential_id": _CREDENTIAL_ID_PROPERTY,
             },
             "required": ["query"],
         }
