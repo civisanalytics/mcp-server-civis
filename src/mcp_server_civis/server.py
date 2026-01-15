@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import json
 import civis
-from typing import Sequence, Dict, Any, List, Callable
 import sys
 import mcp_server_civis
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -15,8 +18,38 @@ from .civis_studio_pendo_tracker import (
 
 
 class CivisServer:
+    _DATABASE_ID_PROPERTY = {
+        "type": "number",
+        "description": (
+            "The ID of the database to list tables from. "
+            "To see available databases for a given user, use "
+            "`client.databases.list()` in the Civis Python client, "
+            "or point your web browser to "
+            "https://api.civisanalytics.com/databases after logging on to "
+            "Civis Platform as the desired user. "
+            "If not provided, the default database will be used."
+        ),
+    }
+
+    _CREDENTIAL_ID_PROPERTY = {
+        "type": "number",
+        "description": (
+            "The ID of the credential to use. "
+            "To see available credentials for the given user, use "
+            "`client.credentials.list(type=\"Database\")` in the Civis Python client, "
+            "or point your web browser to "
+            "https://api.civisanalytics.com/credentials?type=Database "
+            "after logging on to Civis Platform as the desired user. "
+            "If not provided, the default credential will be used."
+        ),
+    }
+
     def __init__(
-        self, client, default_credential, default_database, schema, description
+        self, client: civis.APIClient,
+        default_credential: int,
+        default_database: int,
+        schema: str | None,
+        description: str | None,
     ):
         self.client = client
         self.default_credential = default_credential
@@ -25,7 +58,7 @@ class CivisServer:
         self.description = description
 
     @staticmethod
-    def register_tool(input_schema: Dict[str, Any]):
+    def register_tool(input_schema: dict[str, Any]):
         """
         Decorator that sets the input_schema as an attribute on the function.
         This is later used by the .tools method to generate the tool list.
@@ -41,7 +74,7 @@ class CivisServer:
 
         return decorator
 
-    def tools(self) -> List[Tool]:
+    def tools(self) -> list[Tool]:
         """Generates a list of available tools based on registered methods,
         their docstrings, and the input schema."""
         tool_list = []
@@ -98,16 +131,25 @@ class CivisServer:
                     "items": {"type": "number"},
                     "description": "a list of table tags IDs to filter by",
                 },
+                "database_id": _DATABASE_ID_PROPERTY,
+                "credential_id": _CREDENTIAL_ID_PROPERTY,
             },
         }
     )
-    def list_tables(self, schema=None, table_tag_ids=None):
+    def list_tables(
+        self,
+        schema=None,
+        table_tag_ids=None,
+        database_id=None,
+        credential_id=None,
+    ):
         """Get the tables in a database"""
         # Use the server schema if provided, otherwise use the parameter
         return self.list_result(
             self.client.tables.list(
                 schema=self.schema or schema,
-                database_id=self.default_database,
+                database_id=database_id or self.default_database,
+                credential_id=credential_id or self.default_credential,
                 table_tag_ids=table_tag_ids,
                 iterator=True,
             )
@@ -145,14 +187,15 @@ class CivisServer:
                         """,
                     "default": 10,
                 },
+                "database_id": _DATABASE_ID_PROPERTY,
+                "credential_id": _CREDENTIAL_ID_PROPERTY,
             },
             "required": ["query"],
         }
     )
-    def run_query(self, query, resultRows=10):
-        """Run a query with the user's default credentials and database. Returns up to
-        1000 rows, depending on the resultRows parameter. Best used for small tables,
-        aggregates or samples."""
+    def run_query(self, query, resultRows=10, database_id=None, credential_id=None):
+        """Run a query. Returns up to 1000 rows, depending on the resultRows parameter.
+        Best used for small tables, aggregates or samples."""
         if self.schema:
             if self.schema not in query:
                 raise ValueError("Specified schema was not in query")
@@ -161,7 +204,8 @@ class CivisServer:
         return self.single_result(
             civis.io.query_civis(
                 query,
-                self.default_database,
+                database_id or self.default_database,
+                credential_id=credential_id or self.default_credential,
                 client=self.client,
                 preview_rows=resultRows,
             ).result()
@@ -172,20 +216,23 @@ class CivisServer:
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "SQL query to execute"},
+                "database_id": _DATABASE_ID_PROPERTY,
+                "credential_id": _CREDENTIAL_ID_PROPERTY,
             },
             "required": ["query"],
         }
     )
-    def pull_data_list(self, query, resultRows=10):
-        """Run a query with the user's default credentials and database. Returns a URL
-        to download the data from. May be used for exporting larger results."""
+    def pull_data_list(self, query, database_id=None, credential_id=None):
+        """Run a query. Returns a URL to download the data from.
+        May be used for exporting larger results."""
         if self.schema:
             if self.schema not in query:
                 raise ValueError("Specified schema was not in query")
             query = "BEGIN READ ONLY; " + query
         sql_result = civis.io.export_to_civis_file(
             query,
-            self.default_database,
+            database_id or self.default_database,
+            credential_id=credential_id or self.default_credential,
             job_name="MCP Export",
             client=self.client,
             hidden=True,
