@@ -63,6 +63,35 @@ workspace. This will allow you to share the configuration with others.
 }
 ```
 
+### Schema-Restricted Mode
+
+The `--schema` parameter limits the server to read-only data exploration within a specific schema, disabling workflow tools and access to other schemas.
+
+When enabled:
+- Only data tools are available: `run_query`, `list_tables`, `get_table`, `pull_data_list`, `publish_html_report`
+- Queries are wrapped with `BEGIN READ ONLY;`
+- Queries must reference the configured schema
+
+To enable, add `"--schema", "your_schema"` to the args. You can optionally add `"--description", "context about your data"` to help the AI understand the data.
+
+```json
+{
+  "mcpServers": {
+    "civis": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "-e", "CIVIS_API_KEY",
+        "civisanalytics/mcp-server",
+        "--schema", "analytics_mart"
+      ],
+      "env": {
+        "CIVIS_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
 ## Examples of Questions
 
 1. "Query the donations table from the donors schema in Civis.
