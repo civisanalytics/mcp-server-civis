@@ -421,6 +421,18 @@ class CivisServer:
         """Get the details for a specific run of a Job"""
         return self.single_result(self.client.jobs.get_runs(job_id, run_id))
 
+    # --- Template tools ---
+    @register_tool(
+            input_schema={
+                "type": "object",
+                "properties": {"id": {"type": "integer", "description": "Template ID"}},
+                "required": ["id"],
+            }
+    )
+    def get_script_template(self, id):
+        """Get the details of a Script Template by ID"""
+        return self.single_result(self.client.templates.get_scripts(id))
+    
     # --- Report tools ---
     @register_tool(
         input_schema={
