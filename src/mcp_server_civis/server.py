@@ -36,7 +36,7 @@ class CivisServer:
         "description": (
             "The ID of the credential to use. "
             "To see available credentials for the given user, use "
-            "`client.credentials.list(type=\"Database\")` in the Civis Python client, "
+            '`client.credentials.list(type="Database")` in the Civis Python client, '
             "or point your web browser to "
             "https://api.civisanalytics.com/credentials?type=Database "
             "after logging on to Civis Platform as the desired user. "
@@ -45,7 +45,8 @@ class CivisServer:
     }
 
     def __init__(
-        self, client: civis.APIClient,
+        self,
+        client: civis.APIClient,
         default_credential: int,
         default_database: int,
         schema: str | None,
@@ -86,8 +87,8 @@ class CivisServer:
                 "list_tables",
                 "get_table",
                 "pull_data_list",
-                "publish_html_report"
-                ]
+                "publish_html_report",
+            ]
         for name in dir(self):
             attr = getattr(self, name)
             if callable(attr) and hasattr(attr, "tool"):
@@ -423,16 +424,16 @@ class CivisServer:
 
     # --- Template tools ---
     @register_tool(
-            input_schema={
-                "type": "object",
-                "properties": {"id": {"type": "integer", "description": "Template ID"}},
-                "required": ["id"],
-            }
+        input_schema={
+            "type": "object",
+            "properties": {"id": {"type": "integer", "description": "Template ID"}},
+            "required": ["id"],
+        }
     )
     def get_script_template(self, id):
         """Get the details of a Script Template by ID"""
         return self.single_result(self.client.templates.get_scripts(id))
-    
+
     # --- Report tools ---
     @register_tool(
         input_schema={
@@ -442,7 +443,7 @@ class CivisServer:
                     "type": "string",
                     "description": """An HTML document. All links to javascript or
                         stylesheets must be absolute references, ideally
-                        hosted on CDNs, not hosted by an LLM provider."""
+                        hosted on CDNs, not hosted by an LLM provider.""",
                 },
                 "name": {
                     "type": "string",
@@ -454,17 +455,19 @@ class CivisServer:
                 },
             },
             "required": ["body", "name", "description"],
-        })
+        }
+    )
     def publish_html_report(self, body: str, name: str | None, description: str | None):
         "Post a report or application in Civis for sharing."
         post_result = self.client.reports.post(
-            name=name,
-            code_body=body,
-            description=description
-            )
+            name=name, code_body=body, description=description
+        )
         result = {
-            'url': ("https://platform.civisanalytics.com/spa/#/reports/" +
-                    str(post_result['id']) + "?fullscreen=true")
+            "url": (
+                "https://platform.civisanalytics.com/spa/#/reports/"
+                + str(post_result["id"])
+                + "?fullscreen=true"
+            )
         }
         return self.single_result(result)
 
@@ -489,10 +492,13 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
     log_pendo_configuration()
 
     # Track MCP session start
-    await track_pendo_event("session_started", {
-        "schema": schema if schema else "none",
-        "has_description": description is not None,
-    })
+    await track_pendo_event(
+        "session_started",
+        {
+            "schema": schema if schema else "none",
+            "has_description": description is not None,
+        },
+    )
 
     # TODO: Convert operations without side effects to resources
     @server.list_tools()
@@ -504,9 +510,12 @@ async def serve(api_key: str | None, schema: str | None, description: str | None
     async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
         """Handle tool calls for civis queries."""
         # Track tool invocation (without prompt text or sensitive arguments)
-        await track_pendo_event("tool_invoked", {
-            "tool_name": name,
-        })
+        await track_pendo_event(
+            "tool_invoked",
+            {
+                "tool_name": name,
+            },
+        )
 
         try:
             return getattr(civis_server, name)(**arguments)
