@@ -1,5 +1,9 @@
 # Civis MCP Server
 
+> [!WARNING]
+> Support for this local Civis MCP server ends on January 4, 2027.
+> Please switch to the [Civis Remote MCP Server](https://support.civisanalytics.com/hc/en-us/articles/49733960322957-Civis-Remote-MCP-Server).
+
 A Model Context Protocol server that provides an interface to the Civis Platform
 
 ## Configuration
@@ -144,18 +148,6 @@ Docker build:
 ```bash
 docker build -t civisanalytics/mcp-server .
 ```
-
-## Contributing
-
-We encourage contributions to help expand and improve mcp-server-civis.
-Whether you want to add new time-related tools, enhance existing functionality,
-or improve documentation, your input is valuable.
-
-For examples of other MCP servers and implementation patterns, see:
-(https://github.com/modelcontextprotocol/servers)
-
-Pull requests are welcome! Feel free to contribute new ideas, bug fixes, or
-enhancements to make mcp-server-civis even more powerful and useful.
 
 ## License
 
